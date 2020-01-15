@@ -1,3 +1,4 @@
+import os
 import requests 
 import logging
 import xml.etree.ElementTree as ET
@@ -11,6 +12,8 @@ import xmltodict
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logger = logging.getLogger()
+
+mydir = os.path.dirname(__file__) + "/../"
 
 namespaces = { 
     'wmdr':'http://def.wmo.int/wmdr/2017',
@@ -52,7 +55,7 @@ def makeXMLSchedule(schedule):
     return etree.fromstring(tmpl)
 
 
-with open("json-schemas/schedule_schema.json","r") as f:
+with open(mydir+"/json-schemas/schedule_schema.json","r") as f:
     schedule_schema = json.load( f )
 
 class DTDResolver(etree.Resolver):
@@ -61,13 +64,13 @@ class DTDResolver(etree.Resolver):
         for d in doms:
             url = url.replace(d,"")
         
-        filename = "./xml-schemas" + url
+        filename = mydir+"/xml-schemas" + url
         return self.resolve_filename( filename, context )
 
 
 logger.info("loading schema files")
 # open and read schema file
-with open(r"xml-schemas/wmdr_RC9.xsd", 'r') as schema_file:
+with open(mydir+"/xml-schemas/wmdr_RC9.xsd", 'r') as schema_file:
     schema_to_check = schema_file
 
     parser = etree.XMLParser(load_dtd=True)
@@ -79,7 +82,7 @@ with open(r"xml-schemas/wmdr_RC9.xsd", 'r') as schema_file:
 
 logger.info("loading XSLT files")
 # open and read schema file
-with open(r"xslts/wmdr2schedule.xsl", 'r') as xslt_file:
+with open(mydir+"/xslts/wmdr2schedule.xsl", 'r') as xslt_file:
     
     xslt_root  = etree.parse(xslt_file)
     transform_schedules = etree.XSLT(xslt_root)
