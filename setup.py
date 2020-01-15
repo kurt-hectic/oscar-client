@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='oscar_lib',
-    version=0.25,
+    version=0.26,
     description='library implementing some functions to interact with OSCAR/Surface',
     author='Timo Proescholdt',
     author_email='tproescholdt@wmo.int',
