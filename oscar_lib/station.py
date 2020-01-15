@@ -13,7 +13,7 @@ import xmltodict
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logger = logging.getLogger()
 
-mydir = os.path.dirname(__file__) + "/"
+mydir = os.path.dirname(__file__) + "/static/"
 
 namespaces = { 
     'wmdr':'http://def.wmo.int/wmdr/2017',

@@ -14,7 +14,7 @@ extra_files = package_files('oscar_lib/static')
 
 setup(
     name='oscar_lib',
-    version=0.28,
+    version=0.29,
     description='library implementing some functions to interact with OSCAR/Surface',
     author='Timo Proescholdt',
     author_email='tproescholdt@wmo.int',
