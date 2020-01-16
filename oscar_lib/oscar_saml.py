@@ -5,7 +5,6 @@ import getopt
 import logging
 import json
 import re
-from flask import current_app
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)            
