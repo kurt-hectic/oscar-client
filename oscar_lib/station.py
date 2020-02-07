@@ -99,7 +99,6 @@ with open(mydir+"/xml-schemas/simplestation.xsd", 'r') as schema_file:
 logger.info("loading XSLT files")
 # open and read schema file
 with open(mydir+"/xslts/wmdr2schedule.xsl", 'r') as xslt_file:
-    
     xslt_root  = etree.parse(xslt_file)
     transform_schedules = etree.XSLT(xslt_root)
 
@@ -107,7 +106,6 @@ with open(mydir+"/xslts/wmdr2schedule.xsl", 'r') as xslt_file:
 
 # open and read schema file
 with open(mydir+"/xslts/simple2wmdr.xsl", 'r') as xslt_file:
-    
     xslt_root  = etree.parse(xslt_file)
     transform_simple = etree.XSLT(xslt_root)
 
@@ -115,7 +113,6 @@ with open(mydir+"/xslts/simple2wmdr.xsl", 'r') as xslt_file:
 
 
 class Station:
-
     
     def initializeFromXML(self,wmdr):
     
@@ -143,12 +140,17 @@ class Station:
             xmlschema.assertValid(self.original_xml)
     
     def initializeFromDict(self,mydict):
-    
+
+        affiliations = [o["affiliation"] for o in mydict["observations"] ]
+        mydict["affiliations"]=affiliations
+
         mydict = {"station": mydict}
     
-        my_item_func = lambda x: 'observation'
+        my_item_func = lambda x: 'observation' if x=="observations" else 'affiliation'
         xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
         xml = xml.replace("True","true").replace("False","false")
+        
+        #print(xml)
         
         xml_root = etree.fromstring(xml)
         xmlschema_simple.assertValid(xml_root)
@@ -176,8 +178,12 @@ class Station:
                     self.initializeFromSimpleXML(args[0])
         else: 
             try:
-                params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations']
+                params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations','stationtype']
                 mydict = { p:kwargs[p] for p in params }
+                optional_params = ['url','description','timezone']
+                for p in optional_params:
+                    if p in kwargs:
+                        mydict[p] = kwargs[p]
                 
                 default_schedule = kwargs.get("default_schedule",None)
 

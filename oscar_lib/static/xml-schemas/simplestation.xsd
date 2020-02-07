@@ -18,16 +18,32 @@
 	<xs:element name="interval" type="xs:int"/>
 	<xs:element name="latitude" type="xs:float"/>
 	<xs:element name="longitude" type="xs:float"/>
+	<xs:element name="timezone" type="xs:string"/>
+	<xs:element name="description" type="xs:string"/>
+	<xs:element name="url" type="xs:anyURI"/>
 	<xs:element name="name" type="xs:string"/>
+	<xs:element name="stationtype" type="xs:string"/>
+	
+
+
 	<xs:element name="observation">
 		<xs:complexType>
-			<xs:sequence>
+			<xs:all>
 				<xs:element ref="variable"/>
 				<xs:element ref="observationsource"/>
+				<xs:element ref="affiliation"/>
 				<xs:element ref="schedule"/>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="affiliations">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="affiliation" maxOccurs="unbounded"/>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+
 	<xs:element name="observations">
 		<xs:complexType>
 			<xs:sequence>
@@ -45,7 +61,7 @@
 	</xs:element>
 	<xs:element name="schedule">
 		<xs:complexType>
-			<xs:sequence>
+			<xs:all>
 				<xs:element ref="startMonth"/>
 				<xs:element ref="endMonth"/>
 				<xs:element ref="startWeekday"/>
@@ -56,7 +72,7 @@
 				<xs:element ref="endMinute"/>
 				<xs:element ref="interval"/>
 				<xs:element ref="international"/>
-			</xs:sequence>
+			</xs:all>
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="startHour" type="xs:byte"/>
@@ -65,7 +81,7 @@
 	<xs:element name="startWeekday" type="xs:byte"/>
 	<xs:element name="station">
 		<xs:complexType>
-			<xs:sequence>
+			<xs:all>
 				<xs:element ref="name"/>
 				<xs:element ref="wigosid"/>
 				<xs:element ref="latitude"/>
@@ -74,11 +90,17 @@
 				<xs:element ref="country"/>
 				<xs:element ref="established"/>
 				<xs:element ref="region"/>
+				<xs:element ref="affiliations"/>				
 				<xs:element ref="observations"/>
-			</xs:sequence>
+				<xs:element ref="url" minOccurs="0"/>
+				<xs:element ref="description" minOccurs="0"/>
+				<xs:element ref="timezone" minOccurs="0"/>
+				<xs:element ref="stationtype"/>
+			</xs:all>
 		</xs:complexType>
 	</xs:element>
-	<xs:element name="variable" type="xs:short"/>
+	<xs:element name="variable" type="xs:short"/>	
+	<xs:element name="affiliation" type="xs:string"/>
 	<xs:element name="wigosid">
 		<xs:simpleType>
 			<xs:restriction base="xs:string">
