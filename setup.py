@@ -14,14 +14,14 @@ extra_files = package_files('oscar_lib/static')
 
 setup(
     name='oscar_lib',
-    version=0.29,
+    version=0.30,
     description='library implementing some functions to interact with OSCAR/Surface',
     author='Timo Proescholdt',
     author_email='tproescholdt@wmo.int',
     url='https://github.com/kurt-hectic/oscar-lib',
     packages=find_packages(),
     install_requires=[
-        'setuptools',  'bs4', 'jsonpath_ng' , 'requests' , 'lxml' , 'jsonschema','xmltodict', 'strict-rfc3339'   
+        'setuptools',  'bs4', 'jsonpath_ng' , 'requests' , 'lxml' , 'jsonschema','xmltodict', 'strict-rfc3339', 'dicttoxml'   
     ],
     package_data={'': extra_files},
 )

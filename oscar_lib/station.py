@@ -3,12 +3,13 @@ import requests
 import logging
 import xml.etree.ElementTree as ET
 from lxml import etree
-from io import BytesIO
+from io import BytesIO, StringIO
 from jsonschema import validate
 from copy import deepcopy
 import jsonschema
 import json
 import xmltodict
+from dicttoxml import dicttoxml
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logger = logging.getLogger()
@@ -58,6 +59,9 @@ def makeXMLSchedule(schedule):
 with open(mydir+"/json-schemas/schedule_schema.json","r") as f:
     schedule_schema = json.load( f )
 
+with open(mydir+"/json-schemas/schedule_schema_small.json","r") as f:
+    schedule_schema_small = json.load( f )
+
 class DTDResolver(etree.Resolver):
     def resolve(self, url, id, context):
         doms = ["http://schemas.wmo.int","http://schemas.opengis.net","http://www.w3.org"]
@@ -80,6 +84,18 @@ with open(mydir+"/xml-schemas/wmdr_RC9.xsd", 'r') as schema_file:
     xmlschema = etree.XMLSchema(xmlschema_doc)
     logger.info("schema parsed sucessfully")
 
+# open and read schema file for simple station type    
+with open(mydir+"/xml-schemas/simplestation.xsd", 'r') as schema_file:
+    schema_to_check = schema_file
+
+    parser = etree.XMLParser(load_dtd=True)
+    parser.resolvers.add( DTDResolver() )
+
+    xmlschema_doc_simple = etree.parse(schema_to_check,parser)
+    xmlschema_simple = etree.XMLSchema(xmlschema_doc_simple)
+    logger.info("schema parsed sucessfully")
+    
+
 logger.info("loading XSLT files")
 # open and read schema file
 with open(mydir+"/xslts/wmdr2schedule.xsl", 'r') as xslt_file:
@@ -89,16 +105,22 @@ with open(mydir+"/xslts/wmdr2schedule.xsl", 'r') as xslt_file:
 
     logger.info("XSLT parsed sucessfully")
 
+# open and read schema file
+with open(mydir+"/xslts/simple2wmdr.xsl", 'r') as xslt_file:
+    
+    xslt_root  = etree.parse(xslt_file)
+    transform_simple = etree.XSLT(xslt_root)
+
+    logger.info("XSLT simple2wmdr parsed sucessfully")
 
 
 class Station:
 
-    def __init__(self,wmdr):
-        logging.debug("init")
-        
+    
+    def initializeFromXML(self,wmdr):
+    
         self.syntax_error=False
         self.invalid_schema=False
-        
         self.has_been_fixed = False
         
         try:
@@ -119,6 +141,64 @@ class Station:
             self.invalid_schema = True
             Station.__fix_deployments(self.original_xml,mode="update",defaultSchedule=internalDefaultSchedule)
             xmlschema.assertValid(self.original_xml)
+    
+    def initializeFromDict(self,mydict):
+    
+        mydict = {"station": mydict}
+    
+        my_item_func = lambda x: 'observation'
+        xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
+        xml = xml.replace("True","true").replace("False","false")
+        
+        xml_root = etree.fromstring(xml)
+        xmlschema_simple.assertValid(xml_root)
+
+        wmdr_tree  = transform_simple(xml_root) # 
+    
+        self.initializeFromXML( str(wmdr_tree).encode("utf-8") )
+
+    def initializeFromSimpleXML(self,xmlstr):
+        pass
+
+    
+    def __init__(self,*args, **kwargs):
+        logging.debug("init")
+        
+        if len(args) == 1 and len(kwargs) == 0:
+            try:
+                mydict = json.loads(args[0])
+                self.initializeFromDict(mydict)
+            except json.decoder.JSONDecodeError : 
+                logger.info("input not JSON.. try XML")
+                if kwargs.get("format","wmdr") == "wmdr":
+                    self.initializeFromXML(args[0])
+                else:
+                    self.initializeFromSimpleXML(args[0])
+        else: 
+            try:
+                params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations']
+                mydict = { p:kwargs[p] for p in params }
+                
+                default_schedule = kwargs.get("default_schedule",None)
+
+                # assign default schedule and validate 
+                for o in kwargs["observations"]:
+                    if default_schedule and not "schedule" in o.keys():
+                        o["schedule"] = default_schedule.copy()
+                    validate( instance=o["schedule"] , schema=schedule_schema_small ,  format_checker=jsonschema.FormatChecker() )
+                
+                self.initializeFromDict(mydict)
+            
+            except KeyError as ke:
+                msg = "required param {} not present {}".format(ke,kwargs.keys())
+                logger.warning(msg)
+                raise ValueError(msg)
+                
+            except jsonschema.exceptions.ValidationError as va:
+                msg = "schedule object not valid {}".format(va)
+                logger.warning(msg)
+                raise ValueError(msg)
+        
 
     
     def save(self,client,override_doublesave=False):
