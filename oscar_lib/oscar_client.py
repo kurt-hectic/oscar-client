@@ -60,7 +60,10 @@ class OscarClient(object):
                 log.info("upload failed.. the log is {logs}".format(logs=response["logs"]) )
 
             status = response["xmlStatus"]
-            
+        
+        elif response.status_code == 401:
+            log.info("Access not granted (401) error")
+            status = "AUTH_ERROR"        
         else:
             log.info("processing error on server side {} {}".format(response.status_code,response.content))
             status = "SERVER_ERROR"
