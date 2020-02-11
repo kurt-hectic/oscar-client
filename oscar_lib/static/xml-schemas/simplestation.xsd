@@ -21,7 +21,13 @@
 	<xs:element name="timezone" type="xs:string"/>
 	<xs:element name="organization" type="xs:string"/>
 	<xs:element name="description" type="xs:string"/>
-	<xs:element name="url" type="xs:anyURI"/>
+	<xs:element name="urls">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="url" type="xs:anyURI" minOccurs="0" maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
 	<xs:element name="real-time" type="xs:boolean"/>
 	<xs:element name="observation">
 		<xs:complexType>
@@ -102,7 +108,7 @@
 				<xs:element ref="affiliations"/>
 				<xs:element ref="observations"/>
 				<xs:element ref="organization" minOccurs="0"/>
-				<xs:element ref="url" minOccurs="0"/>
+				<xs:element ref="urls" minOccurs="0"/>
 				<xs:element ref="description" minOccurs="0"/>
 				<xs:element ref="timezone" minOccurs="0"/>
 				<xs:element ref="stationtype"/>
@@ -114,9 +120,8 @@
 	<xs:element name="affiliation">
 		<xs:complexType>
 			<xs:simpleContent>
-				<xs:extension base="xs:string">
-					<!--<xs:attribute name="status" type="xs:string" use="required"/> -->
-				</xs:extension>
+				<xs:extension base="xs:string"/>
+				<!--<xs:attribute name="status" type="xs:string" use="required"/> -->
 			</xs:simpleContent>
 		</xs:complexType>
 	</xs:element>

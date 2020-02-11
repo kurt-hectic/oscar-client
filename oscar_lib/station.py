@@ -1,4 +1,4 @@
-import os
+import os,sys
 import requests 
 import logging
 import xml.etree.ElementTree as ET
@@ -143,10 +143,13 @@ class Station:
 
         affiliations = [o["affiliation"] for o in mydict["observations"] ]
         mydict["affiliations"]=(list(set(affiliations)))
-
+        
+        if not isinstance(mydict["urls"],list):
+            mydict["urls"] = (mydict["urls"],)
+        
         mydict = {"station": mydict}
     
-        my_item_func = lambda x: 'observation' if x=="observations" else 'affiliation'
+        my_item_func = lambda x: 'observation' if x=="observations" else ("url" if x=="urls" else 'affiliation')
         xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
         xml = xml.replace("True","true").replace("False","false")
         self.initializeFromSimpleXML(xml)
@@ -154,7 +157,12 @@ class Station:
         
     def initializeFromSimpleXML(self,xml):
         xml_root = etree.fromstring(xml)
-        xmlschema_simple.assertValid(xml_root)
+        
+        try:
+            xmlschema_simple.assertValid(xml_root)
+        except etree.DocumentInvalid as di:
+            logger.warning("XML invalid:",di,xml)
+            sys.exit(1)
 
         wmdr_tree  = transform_simple(xml_root) # 
         self.initializeFromXML( str(wmdr_tree).encode("utf-8") )
@@ -182,7 +190,7 @@ class Station:
             try:
                 params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations','stationtype','status']
                 mydict = { p:kwargs[p] for p in params }
-                optional_params = ['url','description','timezone','organization']
+                optional_params = ['urls','description','timezone','organization']
                 for p in optional_params:
                     if p in kwargs:
                         mydict[p] = kwargs[p]
