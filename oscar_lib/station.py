@@ -149,22 +149,24 @@ class Station:
         my_item_func = lambda x: 'observation' if x=="observations" else 'affiliation'
         xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
         xml = xml.replace("True","true").replace("False","false")
+        self.initializeFromSimpleXML(xml)
         
-        #print(xml)
         
+    def initializeFromSimpleXML(self,xml):
         xml_root = etree.fromstring(xml)
         xmlschema_simple.assertValid(xml_root)
 
         wmdr_tree  = transform_simple(xml_root) # 
-    
         self.initializeFromXML( str(wmdr_tree).encode("utf-8") )
+        
+        self.simplexml = xml
 
-    def initializeFromSimpleXML(self,xmlstr):
-        pass
 
     
     def __init__(self,*args, **kwargs):
         logging.debug("init")
+        
+        self.simplexml=None
         
         if len(args) == 1 and len(kwargs) == 0:
             try:
@@ -495,6 +497,8 @@ class Station:
     def __str__(self):
         return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding="unicode")
         
+    def toSimpleXML(self):
+        return self.simplexml
         
     def validate(self,original=False):
         xmlschema.assertValid(self.xml_root)
