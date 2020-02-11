@@ -113,7 +113,7 @@
 								<wmdr:programAffiliation xlink:href="http://codes.wmo.int/wmdr/ProgramAffiliation/{./text()}"/>
 								<wmdr:reportingStatus>
 									<wmdr:ReportingStatus>
-										<wmdr:reportingStatus xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/{station/status/text()}"/>
+										<wmdr:reportingStatus xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/{/station/status/text()}"/>
 										<wmdr:validPeriod xlink:type="simple">
 											<gml:TimePeriod gml:id="affiliation_{position()}_status">
 												<gml:beginPosition>
