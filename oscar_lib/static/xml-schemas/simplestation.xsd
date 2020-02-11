@@ -27,7 +27,7 @@
 			<xs:all>
 				<xs:element ref="variable"/>
 				<xs:element ref="observationsource"/>
-				<xs:element ref="inneraffiliation"/>
+				<xs:element ref="affiliation"/>
 				<xs:element ref="schedule"/>
 			</xs:all>
 		</xs:complexType>
@@ -75,7 +75,7 @@
 				<xs:element ref="endMinute"/>
 				<xs:element ref="interval"/>
 				<xs:element ref="international"/>
-				<xs:element ref="real-time"/>
+				<xs:element ref="real-time" minOccurs="0" />
 			</xs:all>
 		</xs:complexType>
 	</xs:element>
@@ -118,7 +118,6 @@
 			</xs:simpleContent>
 		</xs:complexType>
 	</xs:element>
-	<xs:element name="inneraffiliation" type="xs:string"/>
 	<xs:element name="wigosid">
 		<xs:simpleType>
 			<xs:restriction base="xs:string">
