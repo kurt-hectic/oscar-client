@@ -134,7 +134,7 @@
 								<wmdr:programAffiliation xlink:href="{affiliation/text()}"/>
 								<wmdr:observation>
 									<om:OM_Observation gml:id="obs_{position()}">
-										<om:type xlink:href="http://codes.wmo.int/wmdr/featureOfInterest/point"/>
+										<om:type xlink:href="http://codes.wmo.int/wmdr/featureOfInterest/point"/>										
 										<om:phenomenonTime>
 											<gml:TimePeriod gml:id="pt_tp_{position()}_1">
 												<gml:beginPosition>

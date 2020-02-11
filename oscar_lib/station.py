@@ -142,7 +142,7 @@ class Station:
     def initializeFromDict(self,mydict):
 
         affiliations = [o["affiliation"] for o in mydict["observations"] ]
-        mydict["affiliations"]=affiliations
+        mydict["affiliations"]=(list(set(affiliations)))
 
         mydict = {"station": mydict}
     
