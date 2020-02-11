@@ -71,10 +71,14 @@
 					<xsl:if test="station/description/text()">
 						<wmdr:description>
 							<wmdr:Description>
-								<wmdr:description><xsl:value-of select="station/description/text()"/></wmdr:description>
+								<wmdr:description>
+									<xsl:value-of select="station/description/text()"/>
+								</wmdr:description>
 								<wmdr:validPeriod xlink:type="simple">
 									<gml:TimePeriod gml:id="desc_1">
-										<gml:beginPosition><xsl:value-of select="station/established/text()"/></gml:beginPosition>
+										<gml:beginPosition>
+											<xsl:value-of select="station/established/text()"/>
+										</gml:beginPosition>
 										<gml:endPosition/>
 									</gml:TimePeriod>
 								</wmdr:validPeriod>
@@ -100,11 +104,24 @@
 						</wmdr:Territory>
 					</wmdr:territory>
 					<xsl:for-each select="station/affiliations/affiliation">
-					<wmdr:programAffiliation>
-						<wmdr:ProgramAffiliation>
-							<wmdr:programAffiliation xlink:href="http://codes.wmo.int/wmdr/ProgramAffiliation/{./text()}"/>
-						</wmdr:ProgramAffiliation>
-					</wmdr:programAffiliation>
+						<wmdr:programAffiliation>
+							<wmdr:ProgramAffiliation>
+								<wmdr:programAffiliation xlink:href="http://codes.wmo.int/wmdr/ProgramAffiliation/{./text()}"/>
+								<wmdr:reportingStatus>
+									<wmdr:ReportingStatus>
+										<wmdr:reportingStatus xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/{/station/status/text()}"/>
+										<wmdr:validPeriod xlink:type="simple">
+											<gml:TimePeriod gml:id="affiliation_{position()}_status">
+												<gml:beginPosition>
+													<xsl:value-of select="/station/established/text()"/>
+												</gml:beginPosition>
+												<gml:endPosition/>
+											</gml:TimePeriod>
+										</wmdr:validPeriod>
+									</wmdr:ReportingStatus>
+								</wmdr:reportingStatus>
+							</wmdr:ProgramAffiliation>
+						</wmdr:programAffiliation>
 					</xsl:for-each>
 					<xsl:for-each select="station/observations/observation">
 						<wmdr:observation>
@@ -202,7 +219,33 @@
 										</om:procedure>
 										<om:observedProperty xlink:href="{variable/text()}"/>
 										<om:featureOfInterest/>
-										<om:result/>
+										<om:result xlink:type="simple">
+											<wmdr:ResultSet>
+												<wmdr:distributionInfo>
+													<gmd:MD_Distribution>
+														<gmd:transferOptions xlink:type="simple">
+															<gmd:MD_DigitalTransferOptions>
+																<gmd:onLine xlink:type="simple">
+																	<gmd:CI_OnlineResource>
+																		<gmd:linkage/>
+																		<gmd:description>
+																			<xsl:choose>
+																				<xsl:when test="schedule/real-time='true'">
+																					<gco:CharacterString>NRT</gco:CharacterString>
+																				</xsl:when>
+																				<xsl:otherwise>
+																					<gco:CharacterString>Archive</gco:CharacterString>
+																				</xsl:otherwise>
+																			</xsl:choose>
+																		</gmd:description>
+																	</gmd:CI_OnlineResource>
+																</gmd:onLine>
+															</gmd:MD_DigitalTransferOptions>
+														</gmd:transferOptions>
+													</gmd:MD_Distribution>
+												</wmdr:distributionInfo>
+											</wmdr:ResultSet>
+										</om:result>
 									</om:OM_Observation>
 								</wmdr:observation>
 							</wmdr:ObservingCapability>

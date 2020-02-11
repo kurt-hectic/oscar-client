@@ -118,6 +118,15 @@
             "examples": [
                 true
             ]
+        },
+        "real-time": {
+            "$id": "#/properties/real-time",
+            "type": "boolean",
+            "title": "The rea-time Schema",
+            "default": true,
+            "examples": [
+                true
+            ]
         }
     }
 }

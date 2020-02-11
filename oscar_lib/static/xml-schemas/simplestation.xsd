@@ -4,15 +4,12 @@
 	<xs:element name="country">
 		<xs:simpleType>
 			<xs:restriction base="xs:string">
-				<xs:enumeration value="TZA"/>
+				<xs:maxLength value="3"/>
+				<xs:minLength value="3"/>
 			</xs:restriction>
 		</xs:simpleType>
 	</xs:element>
 	<xs:element name="elevation" type="xs:float"/>
-	<xs:element name="endHour" type="xs:byte"/>
-	<xs:element name="endMinute" type="xs:byte"/>
-	<xs:element name="endMonth" type="xs:byte"/>
-	<xs:element name="endWeekday" type="xs:byte"/>
 	<xs:element name="established" type="xs:date"/>
 	<xs:element name="international" type="xs:boolean"/>
 	<xs:element name="interval" type="xs:int"/>
@@ -23,15 +20,14 @@
 	<xs:element name="url" type="xs:anyURI"/>
 	<xs:element name="name" type="xs:string"/>
 	<xs:element name="stationtype" type="xs:string"/>
-	
-
-
+	<xs:element name="status" type="xs:string"/>
+	<xs:element name="real-time" type="xs:boolean"/>
 	<xs:element name="observation">
 		<xs:complexType>
 			<xs:all>
 				<xs:element ref="variable"/>
 				<xs:element ref="observationsource"/>
-				<xs:element ref="affiliation"/>
+				<xs:element ref="inneraffiliation"/>
 				<xs:element ref="schedule"/>
 			</xs:all>
 		</xs:complexType>
@@ -43,7 +39,6 @@
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
-
 	<xs:element name="observations">
 		<xs:complexType>
 			<xs:sequence>
@@ -55,7 +50,15 @@
 	<xs:element name="region">
 		<xs:simpleType>
 			<xs:restriction base="xs:string">
-				<xs:enumeration value="Africa"/>
+				<xs:enumeration value="africa"/>
+				<xs:enumeration value="antarctica"/>
+				<xs:enumeration value="asia"/>
+				<xs:enumeration value="europe"/>
+				<xs:enumeration value="northCentralAmericaCaribbean"/>
+				<xs:enumeration value="southAmerica"/>
+				<xs:enumeration value="southWestPacific"/>
+				<xs:enumeration value="unknown"/>
+				<xs:enumeration value="inapplicable"/>
 			</xs:restriction>
 		</xs:simpleType>
 	</xs:element>
@@ -72,13 +75,18 @@
 				<xs:element ref="endMinute"/>
 				<xs:element ref="interval"/>
 				<xs:element ref="international"/>
+				<xs:element ref="real-time"/>
 			</xs:all>
 		</xs:complexType>
 	</xs:element>
-	<xs:element name="startHour" type="xs:byte"/>
-	<xs:element name="startMinute" type="xs:byte"/>
-	<xs:element name="startMonth" type="xs:byte"/>
-	<xs:element name="startWeekday" type="xs:byte"/>
+	<xs:element name="startHour" type="hourtype"/>
+	<xs:element name="endHour" type="hourtype"/>
+	<xs:element name="startMinute" type="sixtytype"/>
+	<xs:element name="endMinute" type="sixtytype"/>
+	<xs:element name="startMonth" type="monthtype"/>
+	<xs:element name="endMonth" type="monthtype"/>
+	<xs:element name="startWeekday" type="weektype"/>
+	<xs:element name="endWeekday" type="weektype"/>
 	<xs:element name="station">
 		<xs:complexType>
 			<xs:all>
@@ -90,22 +98,56 @@
 				<xs:element ref="country"/>
 				<xs:element ref="established"/>
 				<xs:element ref="region"/>
-				<xs:element ref="affiliations"/>				
+				<xs:element ref="affiliations"/>
 				<xs:element ref="observations"/>
 				<xs:element ref="url" minOccurs="0"/>
 				<xs:element ref="description" minOccurs="0"/>
 				<xs:element ref="timezone" minOccurs="0"/>
 				<xs:element ref="stationtype"/>
+				<xs:element ref="status"/>
 			</xs:all>
 		</xs:complexType>
 	</xs:element>
-	<xs:element name="variable" type="xs:short"/>	
-	<xs:element name="affiliation" type="xs:string"/>
+	<xs:element name="variable" type="xs:short"/>
+	<xs:element name="affiliation">
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="xs:string">
+					<!--<xs:attribute name="status" type="xs:string" use="required"/> -->
+				</xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="inneraffiliation" type="xs:string"/>
 	<xs:element name="wigosid">
 		<xs:simpleType>
 			<xs:restriction base="xs:string">
-				<xs:pattern value="\d+-\d+-\d+-\w{1,6}"/>
+				<xs:pattern value="\d+-\d+-\d+-\w{1,16}"/>
 			</xs:restriction>
 		</xs:simpleType>
 	</xs:element>
+	<xs:simpleType name="sixtytype">
+		<xs:restriction base="xs:byte">
+			<xs:minInclusive value="0"/>
+			<xs:maxInclusive value="59"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hourtype">
+		<xs:restriction base="xs:byte">
+			<xs:minInclusive value="0"/>
+			<xs:maxInclusive value="23"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="weektype">
+		<xs:restriction base="xs:byte">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="7"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="monthtype">
+		<xs:restriction base="xs:byte">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="12"/>
+		</xs:restriction>
+	</xs:simpleType>
 </xs:schema>

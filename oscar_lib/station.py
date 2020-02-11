@@ -178,7 +178,7 @@ class Station:
                     self.initializeFromSimpleXML(args[0])
         else: 
             try:
-                params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations','stationtype']
+                params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations','stationtype','status']
                 mydict = { p:kwargs[p] for p in params }
                 optional_params = ['url','description','timezone']
                 for p in optional_params:
@@ -191,6 +191,7 @@ class Station:
                 for o in kwargs["observations"]:
                     if default_schedule and not "schedule" in o.keys():
                         o["schedule"] = default_schedule.copy()
+                                            
                     validate( instance=o["schedule"] , schema=schedule_schema_small ,  format_checker=jsonschema.FormatChecker() )
                 
                 self.initializeFromDict(mydict)
