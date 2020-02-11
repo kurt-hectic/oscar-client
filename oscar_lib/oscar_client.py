@@ -55,14 +55,14 @@ class OscarClient(object):
             # reponse:
             response = json.loads(response.content)
             if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
-                log.debug("upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"]))
+                log.info("upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"]))
             else:
-                log.debug("upload failed.. the log is {logs}".format(logs=response["logs"]) )
+                log.info("upload failed.. the log is {logs}".format(logs=response["logs"]) )
 
             status = response["xmlStatus"]
             
         else:
-            log.debug("processing error on server side {} {}".format(response.status_code,response.content))
+            log.info("processing error on server side {} {}".format(response.status_code,response.content))
             status = "SERVER_ERROR"
             
         return status
