@@ -113,7 +113,7 @@
 								<wmdr:programAffiliation xlink:href="http://codes.wmo.int/wmdr/ProgramAffiliation/{./text()}"/>
 								<wmdr:reportingStatus>
 									<wmdr:ReportingStatus>
-										<wmdr:reportingStatus xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/{/station/status/text()}"/>
+										<wmdr:reportingStatus xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/{station/status/text()}"/>
 										<wmdr:validPeriod xlink:type="simple">
 											<gml:TimePeriod gml:id="affiliation_{position()}_status">
 												<gml:beginPosition>
@@ -198,10 +198,7 @@
 																		<wmdr:internationalExchange>
 																			<xsl:value-of select="schedule/international/text()"/>
 																		</wmdr:internationalExchange>
-																		<wmdr:uom xlink:href="http://codes.wmo.int/common/unit/ppbv"/>
-																		<!--
- needs correction, ppbv does not actually exist in the code list yet 
--->
+																		<wmdr:uom xlink:type="simple"/>
 																		<wmdr:temporalReportingInterval>PT<xsl:value-of select="schedule/interval/text()"/>S</wmdr:temporalReportingInterval>
 																	</wmdr:Reporting>
 																</wmdr:reporting>
