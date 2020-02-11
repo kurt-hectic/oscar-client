@@ -180,7 +180,7 @@ class Station:
             try:
                 params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations','stationtype','status']
                 mydict = { p:kwargs[p] for p in params }
-                optional_params = ['url','description','timezone']
+                optional_params = ['url','description','timezone','organization']
                 for p in optional_params:
                     if p in kwargs:
                         mydict[p] = kwargs[p]

@@ -18,6 +18,11 @@
 						<wmdr:ResponsibleParty>
 							<wmdr:responsibleParty>
 								<gmd:CI_ResponsibleParty>
+									<xsl:if test="station/organization/text()">
+										<gmd:organisationName>
+											<gco:CharacterString><xsl:value-of select="station/organization/text()"/></gco:CharacterString>
+										</gmd:organisationName>
+									</xsl:if>
 									<gmd:role>
 										<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists#CI_RoleCode" codeListValue="pointOfContact"/>
 									</gmd:role>
@@ -46,7 +51,6 @@
 									</gml:pos>
 								</gml:Point>
 							</wmdr:geoLocation>
-							<wmdr:geopositioningMethod xlink:href="http://codes.wmo.int/wmdr/GeopositioningMethod/gps"/>
 							<wmdr:validPeriod>
 								<gml:TimePeriod gml:id="tp_geop_1">
 									<gml:beginPosition>

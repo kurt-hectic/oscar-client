@@ -9,6 +9,9 @@
 			</xs:restriction>
 		</xs:simpleType>
 	</xs:element>
+	<xs:element name="name" type="xs:string"/>
+	<xs:element name="stationtype" type="xs:string"/>
+	<xs:element name="status" type="xs:string"/>
 	<xs:element name="elevation" type="xs:float"/>
 	<xs:element name="established" type="xs:date"/>
 	<xs:element name="international" type="xs:boolean"/>
@@ -16,11 +19,9 @@
 	<xs:element name="latitude" type="xs:float"/>
 	<xs:element name="longitude" type="xs:float"/>
 	<xs:element name="timezone" type="xs:string"/>
+	<xs:element name="organization" type="xs:string"/>
 	<xs:element name="description" type="xs:string"/>
 	<xs:element name="url" type="xs:anyURI"/>
-	<xs:element name="name" type="xs:string"/>
-	<xs:element name="stationtype" type="xs:string"/>
-	<xs:element name="status" type="xs:string"/>
 	<xs:element name="real-time" type="xs:boolean"/>
 	<xs:element name="observation">
 		<xs:complexType>
@@ -75,7 +76,7 @@
 				<xs:element ref="endMinute"/>
 				<xs:element ref="interval"/>
 				<xs:element ref="international"/>
-				<xs:element ref="real-time" minOccurs="0" />
+				<xs:element ref="real-time" minOccurs="0"/>
 			</xs:all>
 		</xs:complexType>
 	</xs:element>
@@ -100,6 +101,7 @@
 				<xs:element ref="region"/>
 				<xs:element ref="affiliations"/>
 				<xs:element ref="observations"/>
+				<xs:element ref="organization" minOccurs="0"/>
 				<xs:element ref="url" minOccurs="0"/>
 				<xs:element ref="description" minOccurs="0"/>
 				<xs:element ref="timezone" minOccurs="0"/>
