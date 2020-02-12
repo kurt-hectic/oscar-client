@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.4" />
+<title>oscar_lib.oscar_client API documentation</title>
+<meta name="description" content="This module is responsible for the interactions with the OSCAR/Surface system" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>oscar_lib.oscar_client</code></h1>
+</header>
+<section id="section-intro">
+<p>This module is responsible for the interactions with the OSCAR/Surface system</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;This module is responsible for the interactions with the OSCAR/Surface system&#34;&#34;&#34;
+
+import os
+import requests
+import json
+import datetime
+from jsonpath_ng import jsonpath
+from jsonpath_ng.ext import parse
+import logging
+
+#logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
+__pdoc__ = {} 
+
+class OscarClient(object):
+
+
+    # do not document deprecated methods
+    __pdoc__[&#34;OscarClient.oscarSearch&#34;] = False
+    __pdoc__[&#34;OscarClient.uploadXML&#34;] = False
+    __pdoc__[&#34;OscarClient.getInternalIDfromWigosId&#34;] = False
+
+
+    _OSCAR_SEARCH_URL = &#39;//rest/api/search/station&#39;
+    _WIGOSID_SEARCH_URL = &#39;//rest/api/stations/approvedStations/wigosIds?q={wigosid}&#39;
+    _STATION_SEARCH_URL = &#39;//rest/api/search/station?stationClass={stationClass}&#39;
+    _STATION_XML_UPLOAD = &#39;//rest/api/wmd/upload&#39;
+    _STATION_XML_DOWNLOAD = &#39;//rest/api/wmd/download/&#39;
+
+    OSCAR_DEFAULT = &#39;https://oscar.wmo.int/surface&#39;
+    &#34;&#34;&#34;The URL of the production system&#34;&#34;&#34;
+    
+    OSCAR_DEPL = &#34;https://oscardepl.wmo.int/surface&#34;
+    &#34;&#34;&#34;The URL of the testing system&#34;&#34;&#34;
+
+
+    def __init__(self,oscar_url=None,token=None):
+        &#34;&#34;&#34;
+        Initializes an OSCAR client instance, where `oscar_url` is the URL of OSCAR, defaulting to the production system,
+        `token` is the OSCAR API token needed for write operations.
+        &#34;&#34;&#34;
+        self.oscar_url = oscar_url if oscar_url else OscarClient.OSCAR_DEFAULT
+        self.token = token
+        self.session = requests.Session()
+
+
+    def upload_XML(self,xml):
+        &#34;&#34;&#34;
+        Uploads the string content passed in `xml` as WMDR to OSCAR.
+        Returns `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR` or `SERVER_ERROR`
+        &#34;&#34;&#34;
+    
+        if not self.token:
+            raise AttributeError(&#34;no token configured.. cannot upload&#34;)
+    
+        headers = { &#39;X-WMO-WMDR-Token&#39; : self.token } 
+
+        content = xml.encode(&#34;utf8&#34;)
+        xml_upload_url = self.oscar_url + OscarClient._STATION_XML_UPLOAD
+
+        response = requests.post( xml_upload_url , data=content , headers=headers  )
+
+        status=None
+        if response.status_code ==  200:
+            # reponse:
+            response = json.loads(response.content)
+            if response[&#34;xmlStatus&#34;] in [&#39;SUCCESS_WITH_WARNINGS&#39;,&#39;SUCCESS&#39;]:
+                log.info(&#34;upload ok, new id {id} {logs}&#34;.format(id=response[&#34;id&#34;],logs=response[&#34;logs&#34;]))
+            else:
+                log.info(&#34;upload failed.. the log is {logs}&#34;.format(logs=response[&#34;logs&#34;]) )
+
+            status = response[&#34;xmlStatus&#34;]
+        
+        elif response.status_code == 401:
+            log.info(&#34;Access not granted (401) error&#34;)
+            status = &#34;AUTH_ERROR&#34;        
+        else:
+            log.info(&#34;processing error on server side {} {}&#34;.format(response.status_code,response.content))
+            status = &#34;SERVER_ERROR&#34;
+            
+        return status
+
+    def load_station(self,wigos_id=None,internal_id=None,cache=False):
+        &#34;&#34;&#34;Loads the station identified by either its WIGOS ID `wigos_id` or OSCAR interal ID `internal_id` as WMDR XML.
+        If a directory path `cache` is supplied, the method will try to load a station from this directory instead of loading it from OSCAR/Surface. 
+        In case the station is not cached, it will be loaded as usual from OSCAR/Surface and then saved to file in the cache directory.
+        This method uses the OSCAR/Surface internal API that is used by the GUI.
+        Returns a representation of the station in WMDR XML.
+        &#34;&#34;&#34;
+        if not wigos_id and not internal_id:
+            raise ValueError(&#34;need either wigos id or internal ID&#34;)
+            
+        if cache:
+            cachedir=&#34;cache/&#34;
+        
+            if wigos_id:
+                cache_filename = os.path.join(cachedir,&#34;wigos-id-{}.xml&#34;.format(wigos_id))
+            else:
+                cache_filename = os.path.join(cachedir,&#34;internal-id-{}.xml&#34;.format(internal_id))
+                
+            if os.path.isfile(cache_filename):
+                return open(cache_filename,&#34;rb&#34;).read()
+        
+        if not wigos_id:
+            log.debug(&#34;trying to get wigos id for {}&#34;.format(internal_id))
+            r = requests.get(self.oscar_url + &#34;//rest/api/stations/station/{}/stationReport&#34;.format(internal_id))
+            if r.status_code != 200:
+                raise KeyError(&#34;{} not contained in OSCAR or cannot be downloaded {}&#34;.format(internal_id, r ))
+
+            json = r.json()
+            
+            for wid in json[&#34;wigosIds&#34;]:
+                if wid[&#34;primary&#34;]:
+                    wigos_id = wid[&#34;wid&#34;]
+                    
+            if not wigos_id:
+                raise ValueError(&#34;station has not primary WIGOS ID&#34;)
+        
+        log.debug(&#34;getting XML for {}&#34;.format(wigos_id))
+        r = requests.get(self.oscar_url + OscarClient._STATION_XML_DOWNLOAD + wigos_id )
+        
+        if r.status_code != 200:
+            raise KeyError(&#34;{} not contained in OSCAR or cannot be downloaded&#34;.format(wigos_id))
+        
+        wmdr = r.content 
+        
+        if cache:
+            with open(cache_filename,&#34;wb&#34;) as f:
+                f.write(wmdr)
+
+        return wmdr
+
+
+    def oscar_search(self,params={}):
+        &#34;&#34;&#34;Performs a search in OSCAR for stations according to the parameters supplied.
+        Returns a JSON structure with the result in the field `data` and meta information such as the length of the result contained in the field `meta`.
+        The parameters and accepted values are documented in the OSCAR/Surface User Manual https://library.wmo.int/index.php?lvl=notice_display&amp;id=20824#.XkQE9Ij_rRb
+        &#34;&#34;&#34;
+        oscar_search_url = self.oscar_url + OscarClient._OSCAR_SEARCH_URL
+        log.info(&#34;searching for {} at {}&#34;.format(params,oscar_search_url))
+        rsp = self.session.get( oscar_search_url , params=params )
+
+        if rsp.status_code == 200:
+            myjson={}
+            myjson[&#34;data&#34;] = json.loads(rsp.content)
+            myjson[&#34;meta&#34;] = { &#39;length&#39; : len(myjson[&#34;data&#34;]) }
+
+            return myjson 
+
+        else:
+            ret = {}
+            ret[&#34;status_code&#34;] = rsp.status_code
+            ret[&#34;message&#34;] = str(rsp.content) 
+
+            return ret
+       
+    def wigos_to_internal_id(self,wigosid):
+        &#34;&#34;&#34;Maps the `wigosid` to the internal id of the corresponding station in OSCAR
+        Returns the `internal_id` of OSCAR.
+        &#34;&#34;&#34;
+    
+        wigosid_search_url = self.oscar_url + OscarClient._WIGOSID_SEARCH_URL
+        rsp=self.session.get( wigosid_search_url.format(wigosid=wigosid) )
+        stations = json.loads(rsp.content)
+        internal_id = stations[0][&#34;id&#34;]
+        return internal_id
+    
+        
+    # backwards compatibility methods
+    def uploadXML(self,xml):
+        log.warning(&#34;deprecated: use upload_XML instead&#34;)
+        return self.upload_XML(xml)
+        
+    def oscarSearch(self,params={}):
+        log.warning(&#34;deprecated: use oscar_search instead&#34;)
+        return self.oscar_search(params)
+        
+    def getInternalIDfromWigosId(self,wigosid):
+        log.warning(&#34;deprecated: use wigos_to_internal_id instead&#34;)
+        return self.wigos_to_internal_id(wigosid)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="oscar_lib.oscar_client.OscarClient"><code class="flex name class">
+<span>class <span class="ident">OscarClient</span></span>
+<span>(</span><span>oscar_url=None, token=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initializes an OSCAR client instance, where <code>oscar_url</code> is the URL of OSCAR, defaulting to the production system,
+<code>token</code> is the OSCAR API token needed for write operations.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class OscarClient(object):
+
+
+    # do not document deprecated methods
+    __pdoc__[&#34;OscarClient.oscarSearch&#34;] = False
+    __pdoc__[&#34;OscarClient.uploadXML&#34;] = False
+    __pdoc__[&#34;OscarClient.getInternalIDfromWigosId&#34;] = False
+
+
+    _OSCAR_SEARCH_URL = &#39;//rest/api/search/station&#39;
+    _WIGOSID_SEARCH_URL = &#39;//rest/api/stations/approvedStations/wigosIds?q={wigosid}&#39;
+    _STATION_SEARCH_URL = &#39;//rest/api/search/station?stationClass={stationClass}&#39;
+    _STATION_XML_UPLOAD = &#39;//rest/api/wmd/upload&#39;
+    _STATION_XML_DOWNLOAD = &#39;//rest/api/wmd/download/&#39;
+
+    OSCAR_DEFAULT = &#39;https://oscar.wmo.int/surface&#39;
+    &#34;&#34;&#34;The URL of the production system&#34;&#34;&#34;
+    
+    OSCAR_DEPL = &#34;https://oscardepl.wmo.int/surface&#34;
+    &#34;&#34;&#34;The URL of the testing system&#34;&#34;&#34;
+
+
+    def __init__(self,oscar_url=None,token=None):
+        &#34;&#34;&#34;
+        Initializes an OSCAR client instance, where `oscar_url` is the URL of OSCAR, defaulting to the production system,
+        `token` is the OSCAR API token needed for write operations.
+        &#34;&#34;&#34;
+        self.oscar_url = oscar_url if oscar_url else OscarClient.OSCAR_DEFAULT
+        self.token = token
+        self.session = requests.Session()
+
+
+    def upload_XML(self,xml):
+        &#34;&#34;&#34;
+        Uploads the string content passed in `xml` as WMDR to OSCAR.
+        Returns `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR` or `SERVER_ERROR`
+        &#34;&#34;&#34;
+    
+        if not self.token:
+            raise AttributeError(&#34;no token configured.. cannot upload&#34;)
+    
+        headers = { &#39;X-WMO-WMDR-Token&#39; : self.token } 
+
+        content = xml.encode(&#34;utf8&#34;)
+        xml_upload_url = self.oscar_url + OscarClient._STATION_XML_UPLOAD
+
+        response = requests.post( xml_upload_url , data=content , headers=headers  )
+
+        status=None
+        if response.status_code ==  200:
+            # reponse:
+            response = json.loads(response.content)
+            if response[&#34;xmlStatus&#34;] in [&#39;SUCCESS_WITH_WARNINGS&#39;,&#39;SUCCESS&#39;]:
+                log.info(&#34;upload ok, new id {id} {logs}&#34;.format(id=response[&#34;id&#34;],logs=response[&#34;logs&#34;]))
+            else:
+                log.info(&#34;upload failed.. the log is {logs}&#34;.format(logs=response[&#34;logs&#34;]) )
+
+            status = response[&#34;xmlStatus&#34;]
+        
+        elif response.status_code == 401:
+            log.info(&#34;Access not granted (401) error&#34;)
+            status = &#34;AUTH_ERROR&#34;        
+        else:
+            log.info(&#34;processing error on server side {} {}&#34;.format(response.status_code,response.content))
+            status = &#34;SERVER_ERROR&#34;
+            
+        return status
+
+    def load_station(self,wigos_id=None,internal_id=None,cache=False):
+        &#34;&#34;&#34;Loads the station identified by either its WIGOS ID `wigos_id` or OSCAR interal ID `internal_id` as WMDR XML.
+        If a directory path `cache` is supplied, the method will try to load a station from this directory instead of loading it from OSCAR/Surface. 
+        In case the station is not cached, it will be loaded as usual from OSCAR/Surface and then saved to file in the cache directory.
+        This method uses the OSCAR/Surface internal API that is used by the GUI.
+        Returns a representation of the station in WMDR XML.
+        &#34;&#34;&#34;
+        if not wigos_id and not internal_id:
+            raise ValueError(&#34;need either wigos id or internal ID&#34;)
+            
+        if cache:
+            cachedir=&#34;cache/&#34;
+        
+            if wigos_id:
+                cache_filename = os.path.join(cachedir,&#34;wigos-id-{}.xml&#34;.format(wigos_id))
+            else:
+                cache_filename = os.path.join(cachedir,&#34;internal-id-{}.xml&#34;.format(internal_id))
+                
+            if os.path.isfile(cache_filename):
+                return open(cache_filename,&#34;rb&#34;).read()
+        
+        if not wigos_id:
+            log.debug(&#34;trying to get wigos id for {}&#34;.format(internal_id))
+            r = requests.get(self.oscar_url + &#34;//rest/api/stations/station/{}/stationReport&#34;.format(internal_id))
+            if r.status_code != 200:
+                raise KeyError(&#34;{} not contained in OSCAR or cannot be downloaded {}&#34;.format(internal_id, r ))
+
+            json = r.json()
+            
+            for wid in json[&#34;wigosIds&#34;]:
+                if wid[&#34;primary&#34;]:
+                    wigos_id = wid[&#34;wid&#34;]
+                    
+            if not wigos_id:
+                raise ValueError(&#34;station has not primary WIGOS ID&#34;)
+        
+        log.debug(&#34;getting XML for {}&#34;.format(wigos_id))
+        r = requests.get(self.oscar_url + OscarClient._STATION_XML_DOWNLOAD + wigos_id )
+        
+        if r.status_code != 200:
+            raise KeyError(&#34;{} not contained in OSCAR or cannot be downloaded&#34;.format(wigos_id))
+        
+        wmdr = r.content 
+        
+        if cache:
+            with open(cache_filename,&#34;wb&#34;) as f:
+                f.write(wmdr)
+
+        return wmdr
+
+
+    def oscar_search(self,params={}):
+        &#34;&#34;&#34;Performs a search in OSCAR for stations according to the parameters supplied.
+        Returns a JSON structure with the result in the field `data` and meta information such as the length of the result contained in the field `meta`.
+        The parameters and accepted values are documented in the OSCAR/Surface User Manual https://library.wmo.int/index.php?lvl=notice_display&amp;id=20824#.XkQE9Ij_rRb
+        &#34;&#34;&#34;
+        oscar_search_url = self.oscar_url + OscarClient._OSCAR_SEARCH_URL
+        log.info(&#34;searching for {} at {}&#34;.format(params,oscar_search_url))
+        rsp = self.session.get( oscar_search_url , params=params )
+
+        if rsp.status_code == 200:
+            myjson={}
+            myjson[&#34;data&#34;] = json.loads(rsp.content)
+            myjson[&#34;meta&#34;] = { &#39;length&#39; : len(myjson[&#34;data&#34;]) }
+
+            return myjson 
+
+        else:
+            ret = {}
+            ret[&#34;status_code&#34;] = rsp.status_code
+            ret[&#34;message&#34;] = str(rsp.content) 
+
+            return ret
+       
+    def wigos_to_internal_id(self,wigosid):
+        &#34;&#34;&#34;Maps the `wigosid` to the internal id of the corresponding station in OSCAR
+        Returns the `internal_id` of OSCAR.
+        &#34;&#34;&#34;
+    
+        wigosid_search_url = self.oscar_url + OscarClient._WIGOSID_SEARCH_URL
+        rsp=self.session.get( wigosid_search_url.format(wigosid=wigosid) )
+        stations = json.loads(rsp.content)
+        internal_id = stations[0][&#34;id&#34;]
+        return internal_id
+    
+        
+    # backwards compatibility methods
+    def uploadXML(self,xml):
+        log.warning(&#34;deprecated: use upload_XML instead&#34;)
+        return self.upload_XML(xml)
+        
+    def oscarSearch(self,params={}):
+        log.warning(&#34;deprecated: use oscar_search instead&#34;)
+        return self.oscar_search(params)
+        
+    def getInternalIDfromWigosId(self,wigosid):
+        log.warning(&#34;deprecated: use wigos_to_internal_id instead&#34;)
+        return self.wigos_to_internal_id(wigosid)</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="oscar_lib.oscar_client.OscarClient.OSCAR_DEFAULT"><code class="name">var <span class="ident">OSCAR_DEFAULT</span></code></dt>
+<dd>
+<section class="desc"><p>The URL of the production system</p></section>
+</dd>
+<dt id="oscar_lib.oscar_client.OscarClient.OSCAR_DEPL"><code class="name">var <span class="ident">OSCAR_DEPL</span></code></dt>
+<dd>
+<section class="desc"><p>The URL of the testing system</p></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="oscar_lib.oscar_client.OscarClient.load_station"><code class="name flex">
+<span>def <span class="ident">load_station</span></span>(<span>self, wigos_id=None, internal_id=None, cache=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Loads the station identified by either its WIGOS ID <code>wigos_id</code> or OSCAR interal ID <code>internal_id</code> as WMDR XML.
+If a directory path <code>cache</code> is supplied, the method will try to load a station from this directory instead of loading it from OSCAR/Surface.
+In case the station is not cached, it will be loaded as usual from OSCAR/Surface and then saved to file in the cache directory.
+This method uses the OSCAR/Surface internal API that is used by the GUI.
+Returns a representation of the station in WMDR XML.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_station(self,wigos_id=None,internal_id=None,cache=False):
+    &#34;&#34;&#34;Loads the station identified by either its WIGOS ID `wigos_id` or OSCAR interal ID `internal_id` as WMDR XML.
+    If a directory path `cache` is supplied, the method will try to load a station from this directory instead of loading it from OSCAR/Surface. 
+    In case the station is not cached, it will be loaded as usual from OSCAR/Surface and then saved to file in the cache directory.
+    This method uses the OSCAR/Surface internal API that is used by the GUI.
+    Returns a representation of the station in WMDR XML.
+    &#34;&#34;&#34;
+    if not wigos_id and not internal_id:
+        raise ValueError(&#34;need either wigos id or internal ID&#34;)
+        
+    if cache:
+        cachedir=&#34;cache/&#34;
+    
+        if wigos_id:
+            cache_filename = os.path.join(cachedir,&#34;wigos-id-{}.xml&#34;.format(wigos_id))
+        else:
+            cache_filename = os.path.join(cachedir,&#34;internal-id-{}.xml&#34;.format(internal_id))
+            
+        if os.path.isfile(cache_filename):
+            return open(cache_filename,&#34;rb&#34;).read()
+    
+    if not wigos_id:
+        log.debug(&#34;trying to get wigos id for {}&#34;.format(internal_id))
+        r = requests.get(self.oscar_url + &#34;//rest/api/stations/station/{}/stationReport&#34;.format(internal_id))
+        if r.status_code != 200:
+            raise KeyError(&#34;{} not contained in OSCAR or cannot be downloaded {}&#34;.format(internal_id, r ))
+
+        json = r.json()
+        
+        for wid in json[&#34;wigosIds&#34;]:
+            if wid[&#34;primary&#34;]:
+                wigos_id = wid[&#34;wid&#34;]
+                
+        if not wigos_id:
+            raise ValueError(&#34;station has not primary WIGOS ID&#34;)
+    
+    log.debug(&#34;getting XML for {}&#34;.format(wigos_id))
+    r = requests.get(self.oscar_url + OscarClient._STATION_XML_DOWNLOAD + wigos_id )
+    
+    if r.status_code != 200:
+        raise KeyError(&#34;{} not contained in OSCAR or cannot be downloaded&#34;.format(wigos_id))
+    
+    wmdr = r.content 
+    
+    if cache:
+        with open(cache_filename,&#34;wb&#34;) as f:
+            f.write(wmdr)
+
+    return wmdr</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.oscar_client.OscarClient.oscar_search"><code class="name flex">
+<span>def <span class="ident">oscar_search</span></span>(<span>self, params={})</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Performs a search in OSCAR for stations according to the parameters supplied.
+Returns a JSON structure with the result in the field <code>data</code> and meta information such as the length of the result contained in the field <code>meta</code>.
+The parameters and accepted values are documented in the OSCAR/Surface User Manual <a href="https://library.wmo.int/index.php?lvl=notice_display&amp;id=20824#.XkQE9Ij_rRb">https://library.wmo.int/index.php?lvl=notice_display&amp;id=20824#.XkQE9Ij_rRb</a></p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def oscar_search(self,params={}):
+    &#34;&#34;&#34;Performs a search in OSCAR for stations according to the parameters supplied.
+    Returns a JSON structure with the result in the field `data` and meta information such as the length of the result contained in the field `meta`.
+    The parameters and accepted values are documented in the OSCAR/Surface User Manual https://library.wmo.int/index.php?lvl=notice_display&amp;id=20824#.XkQE9Ij_rRb
+    &#34;&#34;&#34;
+    oscar_search_url = self.oscar_url + OscarClient._OSCAR_SEARCH_URL
+    log.info(&#34;searching for {} at {}&#34;.format(params,oscar_search_url))
+    rsp = self.session.get( oscar_search_url , params=params )
+
+    if rsp.status_code == 200:
+        myjson={}
+        myjson[&#34;data&#34;] = json.loads(rsp.content)
+        myjson[&#34;meta&#34;] = { &#39;length&#39; : len(myjson[&#34;data&#34;]) }
+
+        return myjson 
+
+    else:
+        ret = {}
+        ret[&#34;status_code&#34;] = rsp.status_code
+        ret[&#34;message&#34;] = str(rsp.content) 
+
+        return ret</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.oscar_client.OscarClient.upload_XML"><code class="name flex">
+<span>def <span class="ident">upload_XML</span></span>(<span>self, xml)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Uploads the string content passed in <code>xml</code> as WMDR to OSCAR.
+Returns <code>SUCCESS</code>,<code>SUCCESS_WITH_WARNINGS</code>,<code>AUTH_ERROR</code> or <code>SERVER_ERROR</code></p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def upload_XML(self,xml):
+    &#34;&#34;&#34;
+    Uploads the string content passed in `xml` as WMDR to OSCAR.
+    Returns `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR` or `SERVER_ERROR`
+    &#34;&#34;&#34;
+
+    if not self.token:
+        raise AttributeError(&#34;no token configured.. cannot upload&#34;)
+
+    headers = { &#39;X-WMO-WMDR-Token&#39; : self.token } 
+
+    content = xml.encode(&#34;utf8&#34;)
+    xml_upload_url = self.oscar_url + OscarClient._STATION_XML_UPLOAD
+
+    response = requests.post( xml_upload_url , data=content , headers=headers  )
+
+    status=None
+    if response.status_code ==  200:
+        # reponse:
+        response = json.loads(response.content)
+        if response[&#34;xmlStatus&#34;] in [&#39;SUCCESS_WITH_WARNINGS&#39;,&#39;SUCCESS&#39;]:
+            log.info(&#34;upload ok, new id {id} {logs}&#34;.format(id=response[&#34;id&#34;],logs=response[&#34;logs&#34;]))
+        else:
+            log.info(&#34;upload failed.. the log is {logs}&#34;.format(logs=response[&#34;logs&#34;]) )
+
+        status = response[&#34;xmlStatus&#34;]
+    
+    elif response.status_code == 401:
+        log.info(&#34;Access not granted (401) error&#34;)
+        status = &#34;AUTH_ERROR&#34;        
+    else:
+        log.info(&#34;processing error on server side {} {}&#34;.format(response.status_code,response.content))
+        status = &#34;SERVER_ERROR&#34;
+        
+    return status</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.oscar_client.OscarClient.wigos_to_internal_id"><code class="name flex">
+<span>def <span class="ident">wigos_to_internal_id</span></span>(<span>self, wigosid)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Maps the <code>wigosid</code> to the internal id of the corresponding station in OSCAR
+Returns the <code>internal_id</code> of OSCAR.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def wigos_to_internal_id(self,wigosid):
+    &#34;&#34;&#34;Maps the `wigosid` to the internal id of the corresponding station in OSCAR
+    Returns the `internal_id` of OSCAR.
+    &#34;&#34;&#34;
+
+    wigosid_search_url = self.oscar_url + OscarClient._WIGOSID_SEARCH_URL
+    rsp=self.session.get( wigosid_search_url.format(wigosid=wigosid) )
+    stations = json.loads(rsp.content)
+    internal_id = stations[0][&#34;id&#34;]
+    return internal_id</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="oscar_lib" href="index.html">oscar_lib</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="oscar_lib.oscar_client.OscarClient" href="#oscar_lib.oscar_client.OscarClient">OscarClient</a></code></h4>
+<ul class="">
+<li><code><a title="oscar_lib.oscar_client.OscarClient.OSCAR_DEFAULT" href="#oscar_lib.oscar_client.OscarClient.OSCAR_DEFAULT">OSCAR_DEFAULT</a></code></li>
+<li><code><a title="oscar_lib.oscar_client.OscarClient.OSCAR_DEPL" href="#oscar_lib.oscar_client.OscarClient.OSCAR_DEPL">OSCAR_DEPL</a></code></li>
+<li><code><a title="oscar_lib.oscar_client.OscarClient.load_station" href="#oscar_lib.oscar_client.OscarClient.load_station">load_station</a></code></li>
+<li><code><a title="oscar_lib.oscar_client.OscarClient.oscar_search" href="#oscar_lib.oscar_client.OscarClient.oscar_search">oscar_search</a></code></li>
+<li><code><a title="oscar_lib.oscar_client.OscarClient.upload_XML" href="#oscar_lib.oscar_client.OscarClient.upload_XML">upload_XML</a></code></li>
+<li><code><a title="oscar_lib.oscar_client.OscarClient.wigos_to_internal_id" href="#oscar_lib.oscar_client.OscarClient.wigos_to_internal_id">wigos_to_internal_id</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

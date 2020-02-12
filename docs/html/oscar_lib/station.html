@@ -1,0 +1,1497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.4" />
+<title>oscar_lib.station API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>oscar_lib.station</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import os,sys
+import requests 
+import logging
+import xml.etree.ElementTree as ET
+from lxml import etree
+from io import BytesIO, StringIO
+from jsonschema import validate
+from copy import deepcopy
+import jsonschema
+import json
+import xmltodict
+from dicttoxml import dicttoxml
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logger = logging.getLogger()
+
+mydir = os.path.dirname(__file__) + &#34;/static/&#34;
+
+namespaces = { 
+    &#39;wmdr&#39;:&#39;http://def.wmo.int/wmdr/2017&#39;,
+    &#39;gml&#39; : &#39;http://www.opengis.net/gml/3.2&#39;,        
+    &#39;xlink&#39; : &#39;http://www.w3.org/1999/xlink&#39;,
+    &#39;xsi&#39; : &#39;http://www.w3.org/2001/XMLSchema-instance&#39;
+}
+
+internalDefaultSchedule = { 
+    &#34;from&#34;: &#34;2016-04-28T00:00:00Z&#34;, &#34;to&#34; : None,     
+    &#34;startMonth&#34;: 1,&#34;endMonth&#34;: 12,
+    &#34;startWeekday&#34;: 1, &#34;endWeekday&#34;: 7,
+    &#34;startHour&#34;: 0, &#34;startMinute&#34;: 0,          
+    &#34;endHour&#34;: 23,    &#34;endMinute&#34;: 59,
+    &#34;interval&#34;: &#34;PT1H&#34;,     &#34;international&#34;: True   
+}
+
+def makeElemnt(prefix,name):
+    ret =  &#34;{&#34;+namespaces[prefix]+&#34;}&#34; +  name 
+    logger.debug(&#34;made {} from {},{}&#34;.format(ret,prefix,name))
+    return ret
+
+def makeXMLSchedule(schedule):
+
+    tmpl = &#34;&#34;&#34;
+        &lt;wmdr:Schedule xmlns:wmdr=&#34;http://def.wmo.int/wmdr/2017&#34; &gt;
+            &lt;wmdr:startMonth&gt;{startMonth}&lt;/wmdr:startMonth&gt;
+            &lt;wmdr:endMonth&gt;{endMonth}&lt;/wmdr:endMonth&gt;
+            &lt;wmdr:startWeekday&gt;{startWeekday}&lt;/wmdr:startWeekday&gt;
+            &lt;wmdr:endWeekday&gt;{endWeekday}&lt;/wmdr:endWeekday&gt;
+            &lt;wmdr:startHour&gt;{startHour}&lt;/wmdr:startHour&gt;
+            &lt;wmdr:endHour&gt;{endHour}&lt;/wmdr:endHour&gt;
+            &lt;wmdr:startMinute&gt;{startMinute}&lt;/wmdr:startMinute&gt;
+            &lt;wmdr:endMinute&gt;{endMinute}&lt;/wmdr:endMinute&gt;
+            &lt;wmdr:diurnalBaseTime&gt;00:00:00Z&lt;/wmdr:diurnalBaseTime&gt;
+    &lt;/wmdr:Schedule&gt;
+    &#34;&#34;&#34;.format(**schedule)
+    
+    return etree.fromstring(tmpl)
+
+
+with open(mydir+&#34;/json-schemas/schedule_schema.json&#34;,&#34;r&#34;) as f:
+    schedule_schema = json.load( f )
+
+with open(mydir+&#34;/json-schemas/schedule_schema_small.json&#34;,&#34;r&#34;) as f:
+    schedule_schema_small = json.load( f )
+
+class DTDResolver(etree.Resolver):
+    def resolve(self, url, id, context):
+        doms = [&#34;http://schemas.wmo.int&#34;,&#34;http://schemas.opengis.net&#34;,&#34;http://www.w3.org&#34;]
+        for d in doms:
+            url = url.replace(d,&#34;&#34;)
+        
+        filename = mydir+&#34;/xml-schemas&#34; + url
+        return self.resolve_filename( filename, context )
+
+
+logger.info(&#34;loading schema files&#34;)
+# open and read schema file
+with open(mydir+&#34;/xml-schemas/wmdr_RC9.xsd&#34;, &#39;r&#39;) as schema_file:
+    schema_to_check = schema_file
+
+    parser = etree.XMLParser(load_dtd=True)
+    parser.resolvers.add( DTDResolver() )
+
+    xmlschema_doc = etree.parse(schema_to_check,parser)
+    xmlschema = etree.XMLSchema(xmlschema_doc)
+    logger.info(&#34;schema parsed sucessfully&#34;)
+
+# open and read schema file for simple station type    
+with open(mydir+&#34;/xml-schemas/simplestation.xsd&#34;, &#39;r&#39;) as schema_file:
+    schema_to_check = schema_file
+
+    parser = etree.XMLParser(load_dtd=True)
+    parser.resolvers.add( DTDResolver() )
+
+    xmlschema_doc_simple = etree.parse(schema_to_check,parser)
+    xmlschema_simple = etree.XMLSchema(xmlschema_doc_simple)
+    logger.info(&#34;schema parsed sucessfully&#34;)
+    
+
+logger.info(&#34;loading XSLT files&#34;)
+# open and read schema file
+with open(mydir+&#34;/xslts/wmdr2schedule.xsl&#34;, &#39;r&#39;) as xslt_file:
+    xslt_root  = etree.parse(xslt_file)
+    transform_schedules = etree.XSLT(xslt_root)
+
+    logger.info(&#34;XSLT parsed sucessfully&#34;)
+
+# open and read schema file
+with open(mydir+&#34;/xslts/simple2wmdr.xsl&#34;, &#39;r&#39;) as xslt_file:
+    xslt_root  = etree.parse(xslt_file)
+    transform_simple = etree.XSLT(xslt_root)
+
+    logger.info(&#34;XSLT simple2wmdr parsed sucessfully&#34;)
+
+
+class Station:
+    
+    def initializeFromXML(self,wmdr):
+    
+        self.syntax_error=False
+        self.invalid_schema=False
+        self.has_been_fixed = False
+        
+        try:
+            logger.debug(&#34;validating XML&#34;)
+            self.xml_root = etree.parse(BytesIO(wmdr))
+            logger.debug(&#39;XML well formed, syntax ok.&#39;)
+            # hold internal copy of original XML. Needs to be valid so that we can submit it 
+            self.original_xml = deepcopy(self.xml_root)
+            xmlschema.assertValid(self.xml_root)
+        except etree.XMLSyntaxError as err:
+            msg = str(err.error_log)
+            logger.debug(&#34;station has XML syntax error {}&#34;.format(msg))
+            self.syntax_error = True
+            self.invalid_schema = True
+        except etree.DocumentInvalid as err:
+            msg = str(err.error_log)
+            logger.debug(&#34;XML has a schema syntax error {}&#34;.format(msg))
+            self.invalid_schema = True
+            Station.__fix_deployments(self.original_xml,mode=&#34;update&#34;,defaultSchedule=internalDefaultSchedule)
+            xmlschema.assertValid(self.original_xml)
+    
+    def initializeFromDict(self,mydict):
+
+        affiliations = [o[&#34;affiliation&#34;] for o in mydict[&#34;observations&#34;] ]
+        mydict[&#34;affiliations&#34;]=(list(set(affiliations)))
+        
+        if not isinstance(mydict[&#34;urls&#34;],list):
+            mydict[&#34;urls&#34;] = (mydict[&#34;urls&#34;],)
+        
+        mydict = {&#34;station&#34;: mydict}
+    
+        my_item_func = lambda x: &#39;observation&#39; if x==&#34;observations&#34; else (&#34;url&#34; if x==&#34;urls&#34; else &#39;affiliation&#39;)
+        xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode(&#34;utf-8&#34;)
+        xml = xml.replace(&#34;True&#34;,&#34;true&#34;).replace(&#34;False&#34;,&#34;false&#34;)
+        self.initializeFromSimpleXML(xml)
+        
+        
+    def initializeFromSimpleXML(self,xml):
+        xml_root = etree.fromstring(xml)
+        
+        try:
+            xmlschema_simple.assertValid(xml_root)
+        except etree.DocumentInvalid as di:
+            logger.warning(&#34;XML invalid:&#34;,di,xml)
+            sys.exit(1)
+
+        wmdr_tree  = transform_simple(xml_root) # 
+        self.initializeFromXML( str(wmdr_tree).encode(&#34;utf-8&#34;) )
+        
+        self.simplexml = xml
+
+
+    
+    def __init__(self,*args, **kwargs):
+        logging.debug(&#34;init&#34;)
+        
+        self.simplexml=None
+        
+        if len(args) == 1 and len(kwargs) == 0:
+            try:
+                mydict = json.loads(args[0])
+                self.initializeFromDict(mydict)
+            except json.decoder.JSONDecodeError : 
+                logger.info(&#34;input not JSON.. try XML&#34;)
+                if kwargs.get(&#34;format&#34;,&#34;wmdr&#34;) == &#34;wmdr&#34;:
+                    self.initializeFromXML(args[0])
+                else:
+                    self.initializeFromSimpleXML(args[0])
+        else: 
+            try:
+                params = [&#39;name&#39;,&#39;wigosid&#39;,&#39;latitude&#39;,&#39;longitude&#39;,&#39;elevation&#39;,&#39;country&#39;,&#39;established&#39;,&#39;region&#39;,&#39;observations&#39;,&#39;stationtype&#39;,&#39;status&#39;]
+                mydict = { p:kwargs[p] for p in params }
+                optional_params = [&#39;urls&#39;,&#39;description&#39;,&#39;timezone&#39;,&#39;organization&#39;]
+                for p in optional_params:
+                    if p in kwargs:
+                        mydict[p] = kwargs[p]
+                
+                default_schedule = kwargs.get(&#34;default_schedule&#34;,None)
+
+                # assign default schedule and validate 
+                for o in kwargs[&#34;observations&#34;]:
+                    if default_schedule and not &#34;schedule&#34; in o.keys():
+                        o[&#34;schedule&#34;] = default_schedule.copy()
+                                            
+                    validate( instance=o[&#34;schedule&#34;] , schema=schedule_schema_small ,  format_checker=jsonschema.FormatChecker() )
+                
+                self.initializeFromDict(mydict)
+            
+            except KeyError as ke:
+                msg = &#34;required param {} not present {}&#34;.format(ke,kwargs.keys())
+                logger.warning(msg)
+                raise ValueError(msg)
+                
+            except jsonschema.exceptions.ValidationError as va:
+                msg = &#34;schedule object not valid {}&#34;.format(va)
+                logger.warning(msg)
+                raise ValueError(msg)
+        
+
+    
+    def save(self,client,override_doublesave=False):
+        self.validate(original= (not override_doublesave))
+        # need to first save the original XML to make sure the gml:id are set
+        if not override_doublesave:
+            original_xml = etree.tostring(self.original_xml,  pretty_print=True, xml_declaration=False, encoding=&#34;unicode&#34;)
+        
+            # with open(&#34;tmp/out1.xml&#34;,&#34;w&#34;,encoding=&#34;utf8&#34;) as f:
+                # f.write(original_xml)
+            
+            status = client.uploadXML( original_xml )
+            logger.info(&#34;uploaded original XML to set gml:id. Status: {}&#34;.format(status))
+        
+            if not status in [&#39;SUCCESS_WITH_WARNINGS&#39;,&#39;SUCCESS&#39;]:
+                raise Exception(&#34;error saving original XML ({})&#34;.format(status))
+        
+        new_xml = str(self)
+        
+        # with open(&#34;tmp/out2.xml&#34;,&#34;w&#34;,encoding=&#34;utf8&#34;) as f:
+                # f.write(new_xml)
+            
+        status = client.uploadXML(new_xml)
+        if not status in [&#39;SUCCESS_WITH_WARNINGS&#39;,&#39;SUCCESS&#39;]:
+            raise Exception(&#34;error saving updated XML ({})&#34;.format(status))
+
+        logger.info(&#34;uploaded updated XML. Status: {}&#34;.format(status))
+     
+    def fix_and_update_datageneration(self,gid,defaultSchedule):
+        self.fix_datageneration(gid,defaultSchedule)
+        self.update_schedule(gid,defaultSchedule,override=True)
+    
+    def fix_datageneration(self,gid,defaultSchedule):
+        return Station.__fix_datageneration(self.xml_root,gid,defaultSchedule)
+    
+    def __fix_datageneration(xml_root,gid,defaultSchedule):
+    
+        xpath = &#34;//wmdr:dataGeneration/wmdr:DataGeneration[@gml:id=&#39;{}&#39;]&#34;.format(gid)
+        elem = xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not elem:
+            raise ValueError(&#34;no schedule (datageneration) with gid=&#39;{}&#39; xpath: {}&#34;.format(gid,xpath))
+        
+        elem=elem[0]
+        logger.debug(&#34;fix_dg: fixing {}&#34;.format(elem))
+                    
+        schedule_elem = elem.find( makeElemnt(&#34;wmdr&#34;,&#34;schedule&#34;) )
+        if schedule_elem.find( makeElemnt(&#34;wmdr&#34;,&#34;Schedule&#34;) ) is None:
+            schedule = makeXMLSchedule(defaultSchedule) 
+            schedule_elem.append ( schedule )
+        
+        reporting_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:temporalReportingInterval&#34;,namespaces=namespaces)
+        if not reporting_elem:
+            reporting_elem = etree.Element(makeElemnt(&#34;wmdr&#34;,&#34;temporalReportingInterval&#34;))
+            uom_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:uom&#34;,namespaces=namespaces)[0]
+            uom_elem.addnext( reporting_elem )
+        else:
+            reporting_elem=reporting_elem[0]
+        reporting_elem.text = defaultSchedule[&#34;interval&#34;]
+        
+        exchange_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange&#34;,namespaces=namespaces)
+        if not exchange_elem:
+            exchange_elem = etree.Element(makeElemnt(&#34;wmdr&#34;,&#34;internationalExchange&#34;))
+            uom_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:uom&#34;,namespaces=namespaces)[0]
+            uom_elem.addprevious( exchange_elem )
+        else:
+           exchange_elem=exchange_elem[0] 
+        exchange_elem.text = &#34;true&#34; if defaultSchedule[&#34;international&#34;] else &#34;false&#34;
+        
+    
+    def fix_deployments(self,mode=&#34;update&#34;,defaultSchedule=None):
+    
+        if self.syntax_error:
+            raise Exception(&#34;invalid XML&#34;)
+
+    
+        if self.has_been_fixed:
+            txt = &#34;XML has already been fixed, doing nothing&#34;
+            logger.warning(txt)
+            print(txt)
+            return False
+
+        Station.__fix_deployments(self.xml_root,mode,defaultSchedule)
+        
+        try:
+            xmlschema.assertValid(self.xml_root)
+            logger.info(&#34;XML schema sucessfully fixed. Schema valid.&#34;)
+            self.has_been_fixed=True
+            self.invalid_schema=False
+            return True
+        except:
+            return False
+
+        
+    def __fix_deployments(xml_root,mode=&#34;update&#34;,defaultSchedule=None):
+
+        if not mode in [&#34;delete&#34;,&#34;update&#34;]:
+            raise ValueError(&#34;invalid mode {} . Use one of merge,update,delete&#34;.format(mode))
+        if mode in [&#34;update&#34;,] and not defaultSchedule:
+            raise ValueError(&#34;specifiy a defaultSchedule&#34;)
+        
+        if mode in [&#34;update&#34;,]:
+            try:
+                validate( instance=defaultSchedule , schema=schedule_schema ,  format_checker=jsonschema.FormatChecker() )
+            except jsonschema.exceptions.ValidationError as ve:
+                logger.debug(&#34;invalud schedule&#34;)
+                raise ValueError(&#34;schedule not valid {}&#34;.format(str(ve)))
+
+        try:
+            xmlschema.assertValid(xml_root)
+        except etree.DocumentInvalid as err:
+            for error in xmlschema.error_log:
+                pass
+                #print(&#34;ERROR ON LINE %s: %s&#34; % (error.line, error.message))
+                #print(error)
+            
+            if mode==&#34;delete&#34;: # remove invalid deployments
+        
+                xpath = &#39;//wmdr:dataGeneration/wmdr:DataGeneration[ wmdr:schedule[not( wmdr:Schedule )] or wmdr:reporting/wmdr:Reporting[not ( wmdr:temporalReportingInterval) ] ]/../../../..&#39; # identify wmdr:Process of empty deployments
+            
+                known_invalid_elements = xml_root.xpath(xpath , namespaces=namespaces)
+                
+                for elem in known_invalid_elements:
+                    logger.debug(&#34;removing {}&#34;.format(elem))
+                    om_procedure = elem.getparent()
+                    om_procedure.attrib.pop( makeElemnt(&#34;xlink&#34;,&#34;type&#34;) )
+                    om_procedure.remove(elem)
+                    om_procedure.text = None
+                    om_procedure.attrib[ makeElemnt(&#34;xsi&#34;,&#34;nil&#34;)] = &#34;true&#34;
+                
+            if mode==&#34;update&#34;:
+                logger.debug(&#34;assigning default schedule to corrupted items&#34;)
+            
+                # xpath = &#39;//wmdr:dataGeneration/wmdr:DataGeneration[ wmdr:schedule[not( wmdr:Schedule )] or wmdr:reporting/wmdr:Reporting[not ( wmdr:temporalReportingInterval) ] or wmdr:reporting/wmdr:Reporting[not ( wmdr:internationalExchange) ]  ]&#39;
+
+                xpath = &#39;//wmdr:dataGeneration/wmdr:DataGeneration[ wmdr:schedule[not( wmdr:Schedule )] or wmdr:reporting/wmdr:Reporting[not ( wmdr:temporalReportingInterval) ] or wmdr:reporting/wmdr:Reporting[not ( wmdr:internationalExchange) ]  ]/@gml:id&#39;
+                
+                known_invalid_elements = xml_root.xpath(xpath , namespaces=namespaces)
+                
+                for elem in known_invalid_elements:
+                    gid = elem
+                    Station.__fix_datageneration(xml_root,gid,defaultSchedule)
+                    
+                    # logger.debug(&#34;fixing {}&#34;.format(elem))
+                    
+                    # schedule_elem = elem.find( makeElemnt(&#34;wmdr&#34;,&#34;schedule&#34;) )
+                    # if not schedule_elem.find( makeElemnt(&#34;wmdr&#34;,&#34;Schedule&#34;) ):
+                        # schedule = makeXMLSchedule(defaultSchedule) 
+                        # schedule_elem.append ( schedule )
+                    
+                    # reporting_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:temporalReportingInterval&#34;,namespaces=namespaces)
+                    # if not reporting_elem:
+                        # reporting_elem = etree.Element(makeElemnt(&#34;wmdr&#34;,&#34;temporalReportingInterval&#34;))
+                        # uom_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:uom&#34;,namespaces=namespaces)[0]
+                        # uom_elem.addnext( reporting_elem )
+                    # else:
+                        # reporting_elem=reporting_elem[0]
+                    # reporting_elem.text = defaultSchedule[&#34;interval&#34;]
+                    
+                    # exchange_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange&#34;,namespaces=namespaces)
+                    # if not exchange_elem:
+                        # exchange_elem = etree.Element(makeElemnt(&#34;wmdr&#34;,&#34;internationalExchange&#34;))
+                        # uom_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:uom&#34;,namespaces=namespaces)[0]
+                        # uom_elem.addprevious( exchange_elem )
+                    # else:
+                       # exchange_elem=exchange_elem[0] 
+                    # exchange_elem.text = &#34;true&#34; if defaultSchedule[&#34;international&#34;] else &#34;false&#34;
+                    
+                        
+
+            # with open(&#34;test_out.xml&#34;,&#34;wb&#34;) as f:
+                # f.write( etree.tostring(xml_root,  pretty_print=True, xml_declaration=True))
+            
+            
+    def schedules(self): 
+        result_tree  = transform_schedules(self.xml_root)
+        
+        def convert_types(path,key,value):
+            int_fields = [&#39;startMonth&#39;,&#39;endMonth&#39;,&#39;startWeekday&#39;,&#39;endWeekday&#39;,&#39;startHour&#39;,&#39;endHour&#39;,&#39;startMinute&#39;,&#39;endMinute&#39;]
+            bool_fields = [&#39;international&#39;,]
+            
+            try:
+                if key in int_fields:
+                    return key , int(value)
+                    
+                if key in bool_fields:
+                    return key , value in [&#39;True&#39;,&#39;true&#39;]
+                    
+                return key, value
+            except (ValueError, TypeError):
+                return key, value
+        
+        station = xmltodict.parse(result_tree,postprocessor=convert_types, force_list=(&#39;observations&#39;,&#39;deployments&#39;,&#39;datagenerations&#39;))
+        
+        res = {}
+        for o in station[&#39;station&#39;][&#39;observations&#39;]:  
+            var_id = int(o[&#39;variableid&#39;].split(&#39;/&#39;)[-1])
+            res[var_id] = o
+
+        return res
+        
+        
+    def current_schedules(self,variables=None):
+        
+        observations = self.schedules()
+        
+        if variables:
+            observations = {var:obs for (var,obs) in observations.items() if var in variables }
+        
+        for var,obs in observations.items():
+            for d in obs[&#39;deployments&#39;]:
+                d[&#39;datagenerations&#39;] = [ dg for dg in d[&#39;datagenerations&#39;] if not dg[&#39;schedule&#39;][&#39;to&#39;]  ] # filter out schedules with end date
+                
+            obs[&#39;deployments&#39;] = [ d for d in obs[&#39;deployments&#39;] if d[&#39;datagenerations&#39;] ]
+            
+        observations = {var:obs for (var,obs) in observations.items() if obs[&#39;deployments&#39;] }
+                
+        return observations
+        
+    def current_schedules_by_var(self,var_id):
+        schedules = self.schedules()
+        codelistid = &#34;http://codes.wmo.int/wmdr/{}&#34;.format(var_id)
+        
+        observation = None
+        for var,o in schedules.items():
+            if var == codelistid:
+                observation = o
+                
+        return observation
+        
+        #last_date = None
+        
+    def get_wigos_ids(self,primary=True):
+        xpath = &#39;/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier&#39;
+        wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not wigosid_elem:
+            raise ValueError(&#34;no WIGOS ID element&#34;)
+            
+        return [ str(wigosid_elem[0].text) , ]
+
+    
+    def update_schedule(self,gid,schedule,override=False):
+    
+        if self.invalid_schema and not override:
+            raise ValidationError(&#34;schema invalid. Fix schema by running fix_deployments first or use override=True&#34;)
+            
+        try:
+            validate( instance=schedule , schema=schedule_schema ,  format_checker=jsonschema.FormatChecker() )
+        except jsonschema.exceptions.ValidationError as ve:
+            logger.debug(&#34;invalid schedule&#34;)
+            raise ValueError(&#34;schedule not valid {}&#34;.format(str(ve)))
+
+        xpath = &#34;//wmdr:dataGeneration/wmdr:DataGeneration[@gml:id=&#39;{}&#39;]&#34;.format(gid)
+        dg_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not dg_elem:
+            raise ValueError(&#34;no schedule (datageneration) with gid=&#39;{}&#39;&#34;.format(gid))
+            
+        dg_elem=dg_elem[0]
+        from_elem = dg_elem.xpath(&#34;./wmdr:validPeriod/gml:TimePeriod/gml:beginPosition&#34;,namespaces=namespaces)
+        to_elem = dg_elem.xpath(&#34;./wmdr:validPeriod/gml:TimePeriod/gml:endPosition&#34;,namespaces=namespaces)
+        interval_elem = dg_elem.xpath(&#34;./wmdr:reporting/wmdr:Reporting/wmdr:temporalReportingInterval&#34;,namespaces=namespaces) 
+        international_elem = dg_elem.xpath(&#34;./wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange&#34;,namespaces=namespaces) 
+        
+        # convert values to String for setting in XML.. except when None
+        #schedule = { key: str(val) if val else None for (key,val) in schedule.items() }
+        
+        if from_elem:
+            from_elem[0].text = schedule[&#34;from&#34;]
+        if to_elem:
+            to_elem[0].text = schedule[&#34;to&#34;]
+        if interval_elem:
+            interval_elem[0].text = str(schedule[&#34;interval&#34;])
+        if international_elem:
+            international_elem[0].text = str(schedule[&#34;international&#34;]).lower()
+            
+        for key,val in schedule.items():
+            if key in [&#39;from&#39;,&#39;to&#39;,&#39;interval&#39;,&#39;international&#39;]:
+                continue
+                
+            elem = dg_elem.xpath(&#34;./wmdr:schedule/wmdr:Schedule/wmdr:{}&#34;.format(key),namespaces=namespaces)
+            if elem:
+                logger.debug(&#34;setting element &#39;{}&#39; to &#39;{}&#39;&#34;.format(key,val))
+                elem[0].text = str(val)
+    
+    def __str__(self):
+        return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding=&#34;unicode&#34;)
+        
+    def toSimpleXML(self):
+        return self.simplexml
+        
+    def validate(self,original=False):
+        xmlschema.assertValid(self.xml_root)
+        if original:
+            try:
+                xmlschema.assertValid(self.original_xml)
+            except etree.DocumentInvalid as err:
+                raise Exception(&#34;original XML not valid&#34;)
+        </code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="oscar_lib.station.makeElemnt"><code class="name flex">
+<span>def <span class="ident">makeElemnt</span></span>(<span>prefix, name)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def makeElemnt(prefix,name):
+    ret =  &#34;{&#34;+namespaces[prefix]+&#34;}&#34; +  name 
+    logger.debug(&#34;made {} from {},{}&#34;.format(ret,prefix,name))
+    return ret</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.makeXMLSchedule"><code class="name flex">
+<span>def <span class="ident">makeXMLSchedule</span></span>(<span>schedule)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def makeXMLSchedule(schedule):
+
+    tmpl = &#34;&#34;&#34;
+        &lt;wmdr:Schedule xmlns:wmdr=&#34;http://def.wmo.int/wmdr/2017&#34; &gt;
+            &lt;wmdr:startMonth&gt;{startMonth}&lt;/wmdr:startMonth&gt;
+            &lt;wmdr:endMonth&gt;{endMonth}&lt;/wmdr:endMonth&gt;
+            &lt;wmdr:startWeekday&gt;{startWeekday}&lt;/wmdr:startWeekday&gt;
+            &lt;wmdr:endWeekday&gt;{endWeekday}&lt;/wmdr:endWeekday&gt;
+            &lt;wmdr:startHour&gt;{startHour}&lt;/wmdr:startHour&gt;
+            &lt;wmdr:endHour&gt;{endHour}&lt;/wmdr:endHour&gt;
+            &lt;wmdr:startMinute&gt;{startMinute}&lt;/wmdr:startMinute&gt;
+            &lt;wmdr:endMinute&gt;{endMinute}&lt;/wmdr:endMinute&gt;
+            &lt;wmdr:diurnalBaseTime&gt;00:00:00Z&lt;/wmdr:diurnalBaseTime&gt;
+    &lt;/wmdr:Schedule&gt;
+    &#34;&#34;&#34;.format(**schedule)
+    
+    return etree.fromstring(tmpl)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="oscar_lib.station.DTDResolver"><code class="flex name class">
+<span>class <span class="ident">DTDResolver</span></span>
+<span>(</span><span>...)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>This is the base class of all resolvers.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DTDResolver(etree.Resolver):
+    def resolve(self, url, id, context):
+        doms = [&#34;http://schemas.wmo.int&#34;,&#34;http://schemas.opengis.net&#34;,&#34;http://www.w3.org&#34;]
+        for d in doms:
+            url = url.replace(d,&#34;&#34;)
+        
+        filename = mydir+&#34;/xml-schemas&#34; + url
+        return self.resolve_filename( filename, context )</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>lxml.etree.Resolver</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="oscar_lib.station.DTDResolver.resolve"><code class="name flex">
+<span>def <span class="ident">resolve</span></span>(<span>self, url, id, context)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>resolve(self, system_url, public_id, context)</p>
+<p>Override this method to resolve an external source by
+<code>system_url</code> and <code>public_id</code>.
+The third argument is an
+opaque context object.</p>
+<p>Return the result of one of the <code>resolve_*()</code> methods.</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def resolve(self, url, id, context):
+    doms = [&#34;http://schemas.wmo.int&#34;,&#34;http://schemas.opengis.net&#34;,&#34;http://www.w3.org&#34;]
+    for d in doms:
+        url = url.replace(d,&#34;&#34;)
+    
+    filename = mydir+&#34;/xml-schemas&#34; + url
+    return self.resolve_filename( filename, context )</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="oscar_lib.station.Station"><code class="flex name class">
+<span>class <span class="ident">Station</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Station:
+    
+    def initializeFromXML(self,wmdr):
+    
+        self.syntax_error=False
+        self.invalid_schema=False
+        self.has_been_fixed = False
+        
+        try:
+            logger.debug(&#34;validating XML&#34;)
+            self.xml_root = etree.parse(BytesIO(wmdr))
+            logger.debug(&#39;XML well formed, syntax ok.&#39;)
+            # hold internal copy of original XML. Needs to be valid so that we can submit it 
+            self.original_xml = deepcopy(self.xml_root)
+            xmlschema.assertValid(self.xml_root)
+        except etree.XMLSyntaxError as err:
+            msg = str(err.error_log)
+            logger.debug(&#34;station has XML syntax error {}&#34;.format(msg))
+            self.syntax_error = True
+            self.invalid_schema = True
+        except etree.DocumentInvalid as err:
+            msg = str(err.error_log)
+            logger.debug(&#34;XML has a schema syntax error {}&#34;.format(msg))
+            self.invalid_schema = True
+            Station.__fix_deployments(self.original_xml,mode=&#34;update&#34;,defaultSchedule=internalDefaultSchedule)
+            xmlschema.assertValid(self.original_xml)
+    
+    def initializeFromDict(self,mydict):
+
+        affiliations = [o[&#34;affiliation&#34;] for o in mydict[&#34;observations&#34;] ]
+        mydict[&#34;affiliations&#34;]=(list(set(affiliations)))
+        
+        if not isinstance(mydict[&#34;urls&#34;],list):
+            mydict[&#34;urls&#34;] = (mydict[&#34;urls&#34;],)
+        
+        mydict = {&#34;station&#34;: mydict}
+    
+        my_item_func = lambda x: &#39;observation&#39; if x==&#34;observations&#34; else (&#34;url&#34; if x==&#34;urls&#34; else &#39;affiliation&#39;)
+        xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode(&#34;utf-8&#34;)
+        xml = xml.replace(&#34;True&#34;,&#34;true&#34;).replace(&#34;False&#34;,&#34;false&#34;)
+        self.initializeFromSimpleXML(xml)
+        
+        
+    def initializeFromSimpleXML(self,xml):
+        xml_root = etree.fromstring(xml)
+        
+        try:
+            xmlschema_simple.assertValid(xml_root)
+        except etree.DocumentInvalid as di:
+            logger.warning(&#34;XML invalid:&#34;,di,xml)
+            sys.exit(1)
+
+        wmdr_tree  = transform_simple(xml_root) # 
+        self.initializeFromXML( str(wmdr_tree).encode(&#34;utf-8&#34;) )
+        
+        self.simplexml = xml
+
+
+    
+    def __init__(self,*args, **kwargs):
+        logging.debug(&#34;init&#34;)
+        
+        self.simplexml=None
+        
+        if len(args) == 1 and len(kwargs) == 0:
+            try:
+                mydict = json.loads(args[0])
+                self.initializeFromDict(mydict)
+            except json.decoder.JSONDecodeError : 
+                logger.info(&#34;input not JSON.. try XML&#34;)
+                if kwargs.get(&#34;format&#34;,&#34;wmdr&#34;) == &#34;wmdr&#34;:
+                    self.initializeFromXML(args[0])
+                else:
+                    self.initializeFromSimpleXML(args[0])
+        else: 
+            try:
+                params = [&#39;name&#39;,&#39;wigosid&#39;,&#39;latitude&#39;,&#39;longitude&#39;,&#39;elevation&#39;,&#39;country&#39;,&#39;established&#39;,&#39;region&#39;,&#39;observations&#39;,&#39;stationtype&#39;,&#39;status&#39;]
+                mydict = { p:kwargs[p] for p in params }
+                optional_params = [&#39;urls&#39;,&#39;description&#39;,&#39;timezone&#39;,&#39;organization&#39;]
+                for p in optional_params:
+                    if p in kwargs:
+                        mydict[p] = kwargs[p]
+                
+                default_schedule = kwargs.get(&#34;default_schedule&#34;,None)
+
+                # assign default schedule and validate 
+                for o in kwargs[&#34;observations&#34;]:
+                    if default_schedule and not &#34;schedule&#34; in o.keys():
+                        o[&#34;schedule&#34;] = default_schedule.copy()
+                                            
+                    validate( instance=o[&#34;schedule&#34;] , schema=schedule_schema_small ,  format_checker=jsonschema.FormatChecker() )
+                
+                self.initializeFromDict(mydict)
+            
+            except KeyError as ke:
+                msg = &#34;required param {} not present {}&#34;.format(ke,kwargs.keys())
+                logger.warning(msg)
+                raise ValueError(msg)
+                
+            except jsonschema.exceptions.ValidationError as va:
+                msg = &#34;schedule object not valid {}&#34;.format(va)
+                logger.warning(msg)
+                raise ValueError(msg)
+        
+
+    
+    def save(self,client,override_doublesave=False):
+        self.validate(original= (not override_doublesave))
+        # need to first save the original XML to make sure the gml:id are set
+        if not override_doublesave:
+            original_xml = etree.tostring(self.original_xml,  pretty_print=True, xml_declaration=False, encoding=&#34;unicode&#34;)
+        
+            # with open(&#34;tmp/out1.xml&#34;,&#34;w&#34;,encoding=&#34;utf8&#34;) as f:
+                # f.write(original_xml)
+            
+            status = client.uploadXML( original_xml )
+            logger.info(&#34;uploaded original XML to set gml:id. Status: {}&#34;.format(status))
+        
+            if not status in [&#39;SUCCESS_WITH_WARNINGS&#39;,&#39;SUCCESS&#39;]:
+                raise Exception(&#34;error saving original XML ({})&#34;.format(status))
+        
+        new_xml = str(self)
+        
+        # with open(&#34;tmp/out2.xml&#34;,&#34;w&#34;,encoding=&#34;utf8&#34;) as f:
+                # f.write(new_xml)
+            
+        status = client.uploadXML(new_xml)
+        if not status in [&#39;SUCCESS_WITH_WARNINGS&#39;,&#39;SUCCESS&#39;]:
+            raise Exception(&#34;error saving updated XML ({})&#34;.format(status))
+
+        logger.info(&#34;uploaded updated XML. Status: {}&#34;.format(status))
+     
+    def fix_and_update_datageneration(self,gid,defaultSchedule):
+        self.fix_datageneration(gid,defaultSchedule)
+        self.update_schedule(gid,defaultSchedule,override=True)
+    
+    def fix_datageneration(self,gid,defaultSchedule):
+        return Station.__fix_datageneration(self.xml_root,gid,defaultSchedule)
+    
+    def __fix_datageneration(xml_root,gid,defaultSchedule):
+    
+        xpath = &#34;//wmdr:dataGeneration/wmdr:DataGeneration[@gml:id=&#39;{}&#39;]&#34;.format(gid)
+        elem = xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not elem:
+            raise ValueError(&#34;no schedule (datageneration) with gid=&#39;{}&#39; xpath: {}&#34;.format(gid,xpath))
+        
+        elem=elem[0]
+        logger.debug(&#34;fix_dg: fixing {}&#34;.format(elem))
+                    
+        schedule_elem = elem.find( makeElemnt(&#34;wmdr&#34;,&#34;schedule&#34;) )
+        if schedule_elem.find( makeElemnt(&#34;wmdr&#34;,&#34;Schedule&#34;) ) is None:
+            schedule = makeXMLSchedule(defaultSchedule) 
+            schedule_elem.append ( schedule )
+        
+        reporting_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:temporalReportingInterval&#34;,namespaces=namespaces)
+        if not reporting_elem:
+            reporting_elem = etree.Element(makeElemnt(&#34;wmdr&#34;,&#34;temporalReportingInterval&#34;))
+            uom_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:uom&#34;,namespaces=namespaces)[0]
+            uom_elem.addnext( reporting_elem )
+        else:
+            reporting_elem=reporting_elem[0]
+        reporting_elem.text = defaultSchedule[&#34;interval&#34;]
+        
+        exchange_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange&#34;,namespaces=namespaces)
+        if not exchange_elem:
+            exchange_elem = etree.Element(makeElemnt(&#34;wmdr&#34;,&#34;internationalExchange&#34;))
+            uom_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:uom&#34;,namespaces=namespaces)[0]
+            uom_elem.addprevious( exchange_elem )
+        else:
+           exchange_elem=exchange_elem[0] 
+        exchange_elem.text = &#34;true&#34; if defaultSchedule[&#34;international&#34;] else &#34;false&#34;
+        
+    
+    def fix_deployments(self,mode=&#34;update&#34;,defaultSchedule=None):
+    
+        if self.syntax_error:
+            raise Exception(&#34;invalid XML&#34;)
+
+    
+        if self.has_been_fixed:
+            txt = &#34;XML has already been fixed, doing nothing&#34;
+            logger.warning(txt)
+            print(txt)
+            return False
+
+        Station.__fix_deployments(self.xml_root,mode,defaultSchedule)
+        
+        try:
+            xmlschema.assertValid(self.xml_root)
+            logger.info(&#34;XML schema sucessfully fixed. Schema valid.&#34;)
+            self.has_been_fixed=True
+            self.invalid_schema=False
+            return True
+        except:
+            return False
+
+        
+    def __fix_deployments(xml_root,mode=&#34;update&#34;,defaultSchedule=None):
+
+        if not mode in [&#34;delete&#34;,&#34;update&#34;]:
+            raise ValueError(&#34;invalid mode {} . Use one of merge,update,delete&#34;.format(mode))
+        if mode in [&#34;update&#34;,] and not defaultSchedule:
+            raise ValueError(&#34;specifiy a defaultSchedule&#34;)
+        
+        if mode in [&#34;update&#34;,]:
+            try:
+                validate( instance=defaultSchedule , schema=schedule_schema ,  format_checker=jsonschema.FormatChecker() )
+            except jsonschema.exceptions.ValidationError as ve:
+                logger.debug(&#34;invalud schedule&#34;)
+                raise ValueError(&#34;schedule not valid {}&#34;.format(str(ve)))
+
+        try:
+            xmlschema.assertValid(xml_root)
+        except etree.DocumentInvalid as err:
+            for error in xmlschema.error_log:
+                pass
+                #print(&#34;ERROR ON LINE %s: %s&#34; % (error.line, error.message))
+                #print(error)
+            
+            if mode==&#34;delete&#34;: # remove invalid deployments
+        
+                xpath = &#39;//wmdr:dataGeneration/wmdr:DataGeneration[ wmdr:schedule[not( wmdr:Schedule )] or wmdr:reporting/wmdr:Reporting[not ( wmdr:temporalReportingInterval) ] ]/../../../..&#39; # identify wmdr:Process of empty deployments
+            
+                known_invalid_elements = xml_root.xpath(xpath , namespaces=namespaces)
+                
+                for elem in known_invalid_elements:
+                    logger.debug(&#34;removing {}&#34;.format(elem))
+                    om_procedure = elem.getparent()
+                    om_procedure.attrib.pop( makeElemnt(&#34;xlink&#34;,&#34;type&#34;) )
+                    om_procedure.remove(elem)
+                    om_procedure.text = None
+                    om_procedure.attrib[ makeElemnt(&#34;xsi&#34;,&#34;nil&#34;)] = &#34;true&#34;
+                
+            if mode==&#34;update&#34;:
+                logger.debug(&#34;assigning default schedule to corrupted items&#34;)
+            
+                # xpath = &#39;//wmdr:dataGeneration/wmdr:DataGeneration[ wmdr:schedule[not( wmdr:Schedule )] or wmdr:reporting/wmdr:Reporting[not ( wmdr:temporalReportingInterval) ] or wmdr:reporting/wmdr:Reporting[not ( wmdr:internationalExchange) ]  ]&#39;
+
+                xpath = &#39;//wmdr:dataGeneration/wmdr:DataGeneration[ wmdr:schedule[not( wmdr:Schedule )] or wmdr:reporting/wmdr:Reporting[not ( wmdr:temporalReportingInterval) ] or wmdr:reporting/wmdr:Reporting[not ( wmdr:internationalExchange) ]  ]/@gml:id&#39;
+                
+                known_invalid_elements = xml_root.xpath(xpath , namespaces=namespaces)
+                
+                for elem in known_invalid_elements:
+                    gid = elem
+                    Station.__fix_datageneration(xml_root,gid,defaultSchedule)
+                    
+                    # logger.debug(&#34;fixing {}&#34;.format(elem))
+                    
+                    # schedule_elem = elem.find( makeElemnt(&#34;wmdr&#34;,&#34;schedule&#34;) )
+                    # if not schedule_elem.find( makeElemnt(&#34;wmdr&#34;,&#34;Schedule&#34;) ):
+                        # schedule = makeXMLSchedule(defaultSchedule) 
+                        # schedule_elem.append ( schedule )
+                    
+                    # reporting_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:temporalReportingInterval&#34;,namespaces=namespaces)
+                    # if not reporting_elem:
+                        # reporting_elem = etree.Element(makeElemnt(&#34;wmdr&#34;,&#34;temporalReportingInterval&#34;))
+                        # uom_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:uom&#34;,namespaces=namespaces)[0]
+                        # uom_elem.addnext( reporting_elem )
+                    # else:
+                        # reporting_elem=reporting_elem[0]
+                    # reporting_elem.text = defaultSchedule[&#34;interval&#34;]
+                    
+                    # exchange_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange&#34;,namespaces=namespaces)
+                    # if not exchange_elem:
+                        # exchange_elem = etree.Element(makeElemnt(&#34;wmdr&#34;,&#34;internationalExchange&#34;))
+                        # uom_elem = elem.xpath(&#34;wmdr:reporting/wmdr:Reporting/wmdr:uom&#34;,namespaces=namespaces)[0]
+                        # uom_elem.addprevious( exchange_elem )
+                    # else:
+                       # exchange_elem=exchange_elem[0] 
+                    # exchange_elem.text = &#34;true&#34; if defaultSchedule[&#34;international&#34;] else &#34;false&#34;
+                    
+                        
+
+            # with open(&#34;test_out.xml&#34;,&#34;wb&#34;) as f:
+                # f.write( etree.tostring(xml_root,  pretty_print=True, xml_declaration=True))
+            
+            
+    def schedules(self): 
+        result_tree  = transform_schedules(self.xml_root)
+        
+        def convert_types(path,key,value):
+            int_fields = [&#39;startMonth&#39;,&#39;endMonth&#39;,&#39;startWeekday&#39;,&#39;endWeekday&#39;,&#39;startHour&#39;,&#39;endHour&#39;,&#39;startMinute&#39;,&#39;endMinute&#39;]
+            bool_fields = [&#39;international&#39;,]
+            
+            try:
+                if key in int_fields:
+                    return key , int(value)
+                    
+                if key in bool_fields:
+                    return key , value in [&#39;True&#39;,&#39;true&#39;]
+                    
+                return key, value
+            except (ValueError, TypeError):
+                return key, value
+        
+        station = xmltodict.parse(result_tree,postprocessor=convert_types, force_list=(&#39;observations&#39;,&#39;deployments&#39;,&#39;datagenerations&#39;))
+        
+        res = {}
+        for o in station[&#39;station&#39;][&#39;observations&#39;]:  
+            var_id = int(o[&#39;variableid&#39;].split(&#39;/&#39;)[-1])
+            res[var_id] = o
+
+        return res
+        
+        
+    def current_schedules(self,variables=None):
+        
+        observations = self.schedules()
+        
+        if variables:
+            observations = {var:obs for (var,obs) in observations.items() if var in variables }
+        
+        for var,obs in observations.items():
+            for d in obs[&#39;deployments&#39;]:
+                d[&#39;datagenerations&#39;] = [ dg for dg in d[&#39;datagenerations&#39;] if not dg[&#39;schedule&#39;][&#39;to&#39;]  ] # filter out schedules with end date
+                
+            obs[&#39;deployments&#39;] = [ d for d in obs[&#39;deployments&#39;] if d[&#39;datagenerations&#39;] ]
+            
+        observations = {var:obs for (var,obs) in observations.items() if obs[&#39;deployments&#39;] }
+                
+        return observations
+        
+    def current_schedules_by_var(self,var_id):
+        schedules = self.schedules()
+        codelistid = &#34;http://codes.wmo.int/wmdr/{}&#34;.format(var_id)
+        
+        observation = None
+        for var,o in schedules.items():
+            if var == codelistid:
+                observation = o
+                
+        return observation
+        
+        #last_date = None
+        
+    def get_wigos_ids(self,primary=True):
+        xpath = &#39;/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier&#39;
+        wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not wigosid_elem:
+            raise ValueError(&#34;no WIGOS ID element&#34;)
+            
+        return [ str(wigosid_elem[0].text) , ]
+
+    
+    def update_schedule(self,gid,schedule,override=False):
+    
+        if self.invalid_schema and not override:
+            raise ValidationError(&#34;schema invalid. Fix schema by running fix_deployments first or use override=True&#34;)
+            
+        try:
+            validate( instance=schedule , schema=schedule_schema ,  format_checker=jsonschema.FormatChecker() )
+        except jsonschema.exceptions.ValidationError as ve:
+            logger.debug(&#34;invalid schedule&#34;)
+            raise ValueError(&#34;schedule not valid {}&#34;.format(str(ve)))
+
+        xpath = &#34;//wmdr:dataGeneration/wmdr:DataGeneration[@gml:id=&#39;{}&#39;]&#34;.format(gid)
+        dg_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not dg_elem:
+            raise ValueError(&#34;no schedule (datageneration) with gid=&#39;{}&#39;&#34;.format(gid))
+            
+        dg_elem=dg_elem[0]
+        from_elem = dg_elem.xpath(&#34;./wmdr:validPeriod/gml:TimePeriod/gml:beginPosition&#34;,namespaces=namespaces)
+        to_elem = dg_elem.xpath(&#34;./wmdr:validPeriod/gml:TimePeriod/gml:endPosition&#34;,namespaces=namespaces)
+        interval_elem = dg_elem.xpath(&#34;./wmdr:reporting/wmdr:Reporting/wmdr:temporalReportingInterval&#34;,namespaces=namespaces) 
+        international_elem = dg_elem.xpath(&#34;./wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange&#34;,namespaces=namespaces) 
+        
+        # convert values to String for setting in XML.. except when None
+        #schedule = { key: str(val) if val else None for (key,val) in schedule.items() }
+        
+        if from_elem:
+            from_elem[0].text = schedule[&#34;from&#34;]
+        if to_elem:
+            to_elem[0].text = schedule[&#34;to&#34;]
+        if interval_elem:
+            interval_elem[0].text = str(schedule[&#34;interval&#34;])
+        if international_elem:
+            international_elem[0].text = str(schedule[&#34;international&#34;]).lower()
+            
+        for key,val in schedule.items():
+            if key in [&#39;from&#39;,&#39;to&#39;,&#39;interval&#39;,&#39;international&#39;]:
+                continue
+                
+            elem = dg_elem.xpath(&#34;./wmdr:schedule/wmdr:Schedule/wmdr:{}&#34;.format(key),namespaces=namespaces)
+            if elem:
+                logger.debug(&#34;setting element &#39;{}&#39; to &#39;{}&#39;&#34;.format(key,val))
+                elem[0].text = str(val)
+    
+    def __str__(self):
+        return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding=&#34;unicode&#34;)
+        
+    def toSimpleXML(self):
+        return self.simplexml
+        
+    def validate(self,original=False):
+        xmlschema.assertValid(self.xml_root)
+        if original:
+            try:
+                xmlschema.assertValid(self.original_xml)
+            except etree.DocumentInvalid as err:
+                raise Exception(&#34;original XML not valid&#34;)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="oscar_lib.station.Station.current_schedules"><code class="name flex">
+<span>def <span class="ident">current_schedules</span></span>(<span>self, variables=None)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def current_schedules(self,variables=None):
+    
+    observations = self.schedules()
+    
+    if variables:
+        observations = {var:obs for (var,obs) in observations.items() if var in variables }
+    
+    for var,obs in observations.items():
+        for d in obs[&#39;deployments&#39;]:
+            d[&#39;datagenerations&#39;] = [ dg for dg in d[&#39;datagenerations&#39;] if not dg[&#39;schedule&#39;][&#39;to&#39;]  ] # filter out schedules with end date
+            
+        obs[&#39;deployments&#39;] = [ d for d in obs[&#39;deployments&#39;] if d[&#39;datagenerations&#39;] ]
+        
+    observations = {var:obs for (var,obs) in observations.items() if obs[&#39;deployments&#39;] }
+            
+    return observations</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.current_schedules_by_var"><code class="name flex">
+<span>def <span class="ident">current_schedules_by_var</span></span>(<span>self, var_id)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def current_schedules_by_var(self,var_id):
+    schedules = self.schedules()
+    codelistid = &#34;http://codes.wmo.int/wmdr/{}&#34;.format(var_id)
+    
+    observation = None
+    for var,o in schedules.items():
+        if var == codelistid:
+            observation = o
+            
+    return observation</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.fix_and_update_datageneration"><code class="name flex">
+<span>def <span class="ident">fix_and_update_datageneration</span></span>(<span>self, gid, defaultSchedule)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fix_and_update_datageneration(self,gid,defaultSchedule):
+    self.fix_datageneration(gid,defaultSchedule)
+    self.update_schedule(gid,defaultSchedule,override=True)</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.fix_datageneration"><code class="name flex">
+<span>def <span class="ident">fix_datageneration</span></span>(<span>self, gid, defaultSchedule)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fix_datageneration(self,gid,defaultSchedule):
+    return Station.__fix_datageneration(self.xml_root,gid,defaultSchedule)</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.fix_deployments"><code class="name flex">
+<span>def <span class="ident">fix_deployments</span></span>(<span>self, mode='update', defaultSchedule=None)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fix_deployments(self,mode=&#34;update&#34;,defaultSchedule=None):
+
+    if self.syntax_error:
+        raise Exception(&#34;invalid XML&#34;)
+
+
+    if self.has_been_fixed:
+        txt = &#34;XML has already been fixed, doing nothing&#34;
+        logger.warning(txt)
+        print(txt)
+        return False
+
+    Station.__fix_deployments(self.xml_root,mode,defaultSchedule)
+    
+    try:
+        xmlschema.assertValid(self.xml_root)
+        logger.info(&#34;XML schema sucessfully fixed. Schema valid.&#34;)
+        self.has_been_fixed=True
+        self.invalid_schema=False
+        return True
+    except:
+        return False</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.get_wigos_ids"><code class="name flex">
+<span>def <span class="ident">get_wigos_ids</span></span>(<span>self, primary=True)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_wigos_ids(self,primary=True):
+    xpath = &#39;/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier&#39;
+    wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+    
+    if not wigosid_elem:
+        raise ValueError(&#34;no WIGOS ID element&#34;)
+        
+    return [ str(wigosid_elem[0].text) , ]</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.initializeFromDict"><code class="name flex">
+<span>def <span class="ident">initializeFromDict</span></span>(<span>self, mydict)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def initializeFromDict(self,mydict):
+
+    affiliations = [o[&#34;affiliation&#34;] for o in mydict[&#34;observations&#34;] ]
+    mydict[&#34;affiliations&#34;]=(list(set(affiliations)))
+    
+    if not isinstance(mydict[&#34;urls&#34;],list):
+        mydict[&#34;urls&#34;] = (mydict[&#34;urls&#34;],)
+    
+    mydict = {&#34;station&#34;: mydict}
+
+    my_item_func = lambda x: &#39;observation&#39; if x==&#34;observations&#34; else (&#34;url&#34; if x==&#34;urls&#34; else &#39;affiliation&#39;)
+    xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode(&#34;utf-8&#34;)
+    xml = xml.replace(&#34;True&#34;,&#34;true&#34;).replace(&#34;False&#34;,&#34;false&#34;)
+    self.initializeFromSimpleXML(xml)</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.initializeFromSimpleXML"><code class="name flex">
+<span>def <span class="ident">initializeFromSimpleXML</span></span>(<span>self, xml)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def initializeFromSimpleXML(self,xml):
+    xml_root = etree.fromstring(xml)
+    
+    try:
+        xmlschema_simple.assertValid(xml_root)
+    except etree.DocumentInvalid as di:
+        logger.warning(&#34;XML invalid:&#34;,di,xml)
+        sys.exit(1)
+
+    wmdr_tree  = transform_simple(xml_root) # 
+    self.initializeFromXML( str(wmdr_tree).encode(&#34;utf-8&#34;) )
+    
+    self.simplexml = xml</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.initializeFromXML"><code class="name flex">
+<span>def <span class="ident">initializeFromXML</span></span>(<span>self, wmdr)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def initializeFromXML(self,wmdr):
+
+    self.syntax_error=False
+    self.invalid_schema=False
+    self.has_been_fixed = False
+    
+    try:
+        logger.debug(&#34;validating XML&#34;)
+        self.xml_root = etree.parse(BytesIO(wmdr))
+        logger.debug(&#39;XML well formed, syntax ok.&#39;)
+        # hold internal copy of original XML. Needs to be valid so that we can submit it 
+        self.original_xml = deepcopy(self.xml_root)
+        xmlschema.assertValid(self.xml_root)
+    except etree.XMLSyntaxError as err:
+        msg = str(err.error_log)
+        logger.debug(&#34;station has XML syntax error {}&#34;.format(msg))
+        self.syntax_error = True
+        self.invalid_schema = True
+    except etree.DocumentInvalid as err:
+        msg = str(err.error_log)
+        logger.debug(&#34;XML has a schema syntax error {}&#34;.format(msg))
+        self.invalid_schema = True
+        Station.__fix_deployments(self.original_xml,mode=&#34;update&#34;,defaultSchedule=internalDefaultSchedule)
+        xmlschema.assertValid(self.original_xml)</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.save"><code class="name flex">
+<span>def <span class="ident">save</span></span>(<span>self, client, override_doublesave=False)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save(self,client,override_doublesave=False):
+    self.validate(original= (not override_doublesave))
+    # need to first save the original XML to make sure the gml:id are set
+    if not override_doublesave:
+        original_xml = etree.tostring(self.original_xml,  pretty_print=True, xml_declaration=False, encoding=&#34;unicode&#34;)
+    
+        # with open(&#34;tmp/out1.xml&#34;,&#34;w&#34;,encoding=&#34;utf8&#34;) as f:
+            # f.write(original_xml)
+        
+        status = client.uploadXML( original_xml )
+        logger.info(&#34;uploaded original XML to set gml:id. Status: {}&#34;.format(status))
+    
+        if not status in [&#39;SUCCESS_WITH_WARNINGS&#39;,&#39;SUCCESS&#39;]:
+            raise Exception(&#34;error saving original XML ({})&#34;.format(status))
+    
+    new_xml = str(self)
+    
+    # with open(&#34;tmp/out2.xml&#34;,&#34;w&#34;,encoding=&#34;utf8&#34;) as f:
+            # f.write(new_xml)
+        
+    status = client.uploadXML(new_xml)
+    if not status in [&#39;SUCCESS_WITH_WARNINGS&#39;,&#39;SUCCESS&#39;]:
+        raise Exception(&#34;error saving updated XML ({})&#34;.format(status))
+
+    logger.info(&#34;uploaded updated XML. Status: {}&#34;.format(status))</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.schedules"><code class="name flex">
+<span>def <span class="ident">schedules</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def schedules(self): 
+    result_tree  = transform_schedules(self.xml_root)
+    
+    def convert_types(path,key,value):
+        int_fields = [&#39;startMonth&#39;,&#39;endMonth&#39;,&#39;startWeekday&#39;,&#39;endWeekday&#39;,&#39;startHour&#39;,&#39;endHour&#39;,&#39;startMinute&#39;,&#39;endMinute&#39;]
+        bool_fields = [&#39;international&#39;,]
+        
+        try:
+            if key in int_fields:
+                return key , int(value)
+                
+            if key in bool_fields:
+                return key , value in [&#39;True&#39;,&#39;true&#39;]
+                
+            return key, value
+        except (ValueError, TypeError):
+            return key, value
+    
+    station = xmltodict.parse(result_tree,postprocessor=convert_types, force_list=(&#39;observations&#39;,&#39;deployments&#39;,&#39;datagenerations&#39;))
+    
+    res = {}
+    for o in station[&#39;station&#39;][&#39;observations&#39;]:  
+        var_id = int(o[&#39;variableid&#39;].split(&#39;/&#39;)[-1])
+        res[var_id] = o
+
+    return res</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.toSimpleXML"><code class="name flex">
+<span>def <span class="ident">toSimpleXML</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def toSimpleXML(self):
+    return self.simplexml</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.update_schedule"><code class="name flex">
+<span>def <span class="ident">update_schedule</span></span>(<span>self, gid, schedule, override=False)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def update_schedule(self,gid,schedule,override=False):
+
+    if self.invalid_schema and not override:
+        raise ValidationError(&#34;schema invalid. Fix schema by running fix_deployments first or use override=True&#34;)
+        
+    try:
+        validate( instance=schedule , schema=schedule_schema ,  format_checker=jsonschema.FormatChecker() )
+    except jsonschema.exceptions.ValidationError as ve:
+        logger.debug(&#34;invalid schedule&#34;)
+        raise ValueError(&#34;schedule not valid {}&#34;.format(str(ve)))
+
+    xpath = &#34;//wmdr:dataGeneration/wmdr:DataGeneration[@gml:id=&#39;{}&#39;]&#34;.format(gid)
+    dg_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+    
+    if not dg_elem:
+        raise ValueError(&#34;no schedule (datageneration) with gid=&#39;{}&#39;&#34;.format(gid))
+        
+    dg_elem=dg_elem[0]
+    from_elem = dg_elem.xpath(&#34;./wmdr:validPeriod/gml:TimePeriod/gml:beginPosition&#34;,namespaces=namespaces)
+    to_elem = dg_elem.xpath(&#34;./wmdr:validPeriod/gml:TimePeriod/gml:endPosition&#34;,namespaces=namespaces)
+    interval_elem = dg_elem.xpath(&#34;./wmdr:reporting/wmdr:Reporting/wmdr:temporalReportingInterval&#34;,namespaces=namespaces) 
+    international_elem = dg_elem.xpath(&#34;./wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange&#34;,namespaces=namespaces) 
+    
+    # convert values to String for setting in XML.. except when None
+    #schedule = { key: str(val) if val else None for (key,val) in schedule.items() }
+    
+    if from_elem:
+        from_elem[0].text = schedule[&#34;from&#34;]
+    if to_elem:
+        to_elem[0].text = schedule[&#34;to&#34;]
+    if interval_elem:
+        interval_elem[0].text = str(schedule[&#34;interval&#34;])
+    if international_elem:
+        international_elem[0].text = str(schedule[&#34;international&#34;]).lower()
+        
+    for key,val in schedule.items():
+        if key in [&#39;from&#39;,&#39;to&#39;,&#39;interval&#39;,&#39;international&#39;]:
+            continue
+            
+        elem = dg_elem.xpath(&#34;./wmdr:schedule/wmdr:Schedule/wmdr:{}&#34;.format(key),namespaces=namespaces)
+        if elem:
+            logger.debug(&#34;setting element &#39;{}&#39; to &#39;{}&#39;&#34;.format(key,val))
+            elem[0].text = str(val)</code></pre>
+</details>
+</dd>
+<dt id="oscar_lib.station.Station.validate"><code class="name flex">
+<span>def <span class="ident">validate</span></span>(<span>self, original=False)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def validate(self,original=False):
+    xmlschema.assertValid(self.xml_root)
+    if original:
+        try:
+            xmlschema.assertValid(self.original_xml)
+        except etree.DocumentInvalid as err:
+            raise Exception(&#34;original XML not valid&#34;)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="oscar_lib" href="index.html">oscar_lib</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="oscar_lib.station.makeElemnt" href="#oscar_lib.station.makeElemnt">makeElemnt</a></code></li>
+<li><code><a title="oscar_lib.station.makeXMLSchedule" href="#oscar_lib.station.makeXMLSchedule">makeXMLSchedule</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="oscar_lib.station.DTDResolver" href="#oscar_lib.station.DTDResolver">DTDResolver</a></code></h4>
+<ul class="">
+<li><code><a title="oscar_lib.station.DTDResolver.resolve" href="#oscar_lib.station.DTDResolver.resolve">resolve</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="oscar_lib.station.Station" href="#oscar_lib.station.Station">Station</a></code></h4>
+<ul class="">
+<li><code><a title="oscar_lib.station.Station.current_schedules" href="#oscar_lib.station.Station.current_schedules">current_schedules</a></code></li>
+<li><code><a title="oscar_lib.station.Station.current_schedules_by_var" href="#oscar_lib.station.Station.current_schedules_by_var">current_schedules_by_var</a></code></li>
+<li><code><a title="oscar_lib.station.Station.fix_and_update_datageneration" href="#oscar_lib.station.Station.fix_and_update_datageneration">fix_and_update_datageneration</a></code></li>
+<li><code><a title="oscar_lib.station.Station.fix_datageneration" href="#oscar_lib.station.Station.fix_datageneration">fix_datageneration</a></code></li>
+<li><code><a title="oscar_lib.station.Station.fix_deployments" href="#oscar_lib.station.Station.fix_deployments">fix_deployments</a></code></li>
+<li><code><a title="oscar_lib.station.Station.get_wigos_ids" href="#oscar_lib.station.Station.get_wigos_ids">get_wigos_ids</a></code></li>
+<li><code><a title="oscar_lib.station.Station.initializeFromDict" href="#oscar_lib.station.Station.initializeFromDict">initializeFromDict</a></code></li>
+<li><code><a title="oscar_lib.station.Station.initializeFromSimpleXML" href="#oscar_lib.station.Station.initializeFromSimpleXML">initializeFromSimpleXML</a></code></li>
+<li><code><a title="oscar_lib.station.Station.initializeFromXML" href="#oscar_lib.station.Station.initializeFromXML">initializeFromXML</a></code></li>
+<li><code><a title="oscar_lib.station.Station.save" href="#oscar_lib.station.Station.save">save</a></code></li>
+<li><code><a title="oscar_lib.station.Station.schedules" href="#oscar_lib.station.Station.schedules">schedules</a></code></li>
+<li><code><a title="oscar_lib.station.Station.toSimpleXML" href="#oscar_lib.station.Station.toSimpleXML">toSimpleXML</a></code></li>
+<li><code><a title="oscar_lib.station.Station.update_schedule" href="#oscar_lib.station.Station.update_schedule">update_schedule</a></code></li>
+<li><code><a title="oscar_lib.station.Station.validate" href="#oscar_lib.station.Station.validate">validate</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
