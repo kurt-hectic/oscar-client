@@ -21,7 +21,7 @@ setup(
     url='https://github.com/kurt-hectic/oscar-lib',
     packages=find_packages(),
     install_requires=[
-        'setuptools',  'bs4', 'jsonpath_ng' , 'requests' , 'lxml' , 'jsonschema','xmltodict', 'strict-rfc3339', 'dicttoxml'   
+        'setuptools',  'bs4', 'jsonpath_ng' , 'requests' , 'lxml' , 'jsonschema','xmltodict', 'strict-rfc3339', 'dicttoxml' , 'jellyfish'  
     ],
     package_data={'': extra_files},
 )

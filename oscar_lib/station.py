@@ -13,6 +13,8 @@ from dicttoxml import dicttoxml
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logger = logging.getLogger()
+logging.getLogger("dicttoxml").setLevel(logging.WARNING)
+
 
 mydir = os.path.dirname(__file__) + "/static/"
 
@@ -69,6 +71,7 @@ class DTDResolver(etree.Resolver):
             url = url.replace(d,"")
         
         filename = mydir+"/xml-schemas" + url
+        logger.debug("resolving XML schema {} to {}".format(url, filename))
         return self.resolve_filename( filename, context )
 
 
