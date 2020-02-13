@@ -32,8 +32,8 @@ class OscarSaml(object):
         info = self._login(username,password)
         
         if info:
-            self.qlack_token = ret["token"]
-            self.cookies = ret["cookies"]
+            self.qlack_token = info["token"]
+            self.cookies = info["cookies"]
         else:
             raise Exception("could not login {}".format(info))
         
@@ -87,6 +87,8 @@ class OscarSaml(object):
         
         headers = {"Accept-Language": "en-US,en;"}
         
+        log.info("going to url {}".format(url))
+        
         if mode=="POST":
             r = session.post(url,data=params,headers=headers)
         elif mode=="GET":
@@ -114,9 +116,12 @@ class OscarSaml(object):
                 raise Exception("login into BIT failed")
             else:
                 log.info("BIT login ok..")
+                
+        #print(html_doc)
 
         
         [params,actionurl] = self.__parseFormInputs(html_doc,url)  
+        #log.info("returning {} and {}".format(params,actionurl))
 
         return [params,actionurl]
 
@@ -142,14 +147,22 @@ class OscarSaml(object):
         
 
         
-    def user_credentials(self):
+    def user_credentials(self,oscar_cookies = None, qlack_token = None):
         """obtains user credentials from OSCAR"""
+        
+        if (not oscar_cookies and not self.cookies) or (not qlack_token and not self.qlack_token):
+            raise ValueError("need to eigther be logged in, or pass cookies and token as parameters")
+            
+        if not oscar_cookies:
+            oscar_cookies = self.cookies
+        if not qlack_token:
+            qlack_token = self.qlack_token
         
         headers = {'Content-type':'application/json;charset=utf-8'}           
         headers = {'Accept': 'application/json' , }
-        headers[QLACK_TOKEN_NAME]  =  "{"+self.qlack_token+"}" 
+        headers[QLACK_TOKEN_NAME]  =  "{"+qlack_token+"}" 
         
-        r = requests.get(self.oscar_url+USER_DETAILS_URL , headers=headers ,  cookies=self.cookies )
+        r = requests.get(self.oscar_url+USER_DETAILS_URL , headers=headers ,  cookies=oscar_cookies )
 
         if r.status_code == 200:
             login_data = json.loads(r.content)
@@ -161,31 +174,39 @@ class OscarSaml(object):
     def _login(self,username,password):    
 
         try:        
-            log.debug("step 1: oscar login button")
+            log.info("step 1: oscar login button")
             oscarSession = requests.Session()
             login_url = self.oscar_url + "//save-state?programId="
             [params,nexturl]=self.__requestUrlandGetForm(login_url,oscarSession,None,"initiating oscar session","GET")
                 
-            log.debug("step 2: send SAML token to BIT")
+            log.info("step 2: send SAML token to BIT")
             bitSession = requests.Session()
             [params2,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params,"sending SAML token to BIT")
 
-            log.debug("step 3: contacting IDP")
-            [params3,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params2,"SSO at BIT")
+            params["HomeRealmSelection"] = "urn:eiam.admin.ch:idp:e-id:CH-LOGIN"
+            
+            log.info("step 2.1: BIT redirect")
+            bitSession = requests.Session()
+            [params21,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params,"BIT redirect")
+            
+            #sys.exit(1)
+
+            log.info("step 3: contacting IDP")
+            [params3,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params21,"SSO at BIT")
             
             #prepare for login
             params3['isiwebuserid']=username
             params3['isiwebpasswd']=password
 
             # login
-            log.debug("step 4: sending username and password to BIT")
+            log.info("step 4: sending username and password to BIT")
             [params4,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params3,"sending username and password to BIT")
             
-            log.debug("step 5: get SAML token")
+            log.info("step 5: get SAML token")
             # get final SAML token
             [params5,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params4,"SSO2 at BIT")
             
-            log.debug("step 6: returning to OSCAR")
+            log.info("step 6: returning to OSCAR")
             # we're back to OSCAR
             [params6,nexturl]=self.__requestUrlandGetForm(nexturl,oscarSession,params5,"back to OSCAR")
 
@@ -193,7 +214,7 @@ class OscarSaml(object):
             # OSCAR sso
             [params7,nexturl]=self.__requestUrlandGetForm(nexturl,oscarSession,params6,"SSO at OSCAR")
 
-            log.debug("step 8: authentication at OSCAR")
+            log.info("step 8: authentication at OSCAR")
             # OSCAR auth
             [params8,nexturl]=self.__requestUrlandGetForm(nexturl,oscarSession,params7,"auth at OSCAR")
             oscar_cookies = oscarSession.cookies.get_dict()
@@ -212,7 +233,7 @@ class OscarSaml(object):
                 
             # test if we are logged in.
 
-            login_data = self.getUserCredentials(oscar_cookies , qlack_token)
+            login_data = self.user_credentials(oscar_cookies , qlack_token)
 
             # "username":"72119686-3962-4bc2-8652-59af15ba20bd"
             username_token = ticket["username"] 
@@ -221,10 +242,10 @@ class OscarSaml(object):
             
             if username_token == username_data:
                 ret = {'token' : qlack_token , 'cookies' : oscar_cookies }
-                log.debug("sucesfully logged on {}, session info {}".format(username_token,ret))
+                log.info("sucesfully logged on {}, session info {}".format(username_token,ret))
                 return ret
             else:
-                log.debug(" logged for {} {} unsucessfull".format(username_token,username_data))
+                log.info(" logged for {} {} unsucessfull".format(username_token,username_data))
                 return False
                 
         except Exception as e:

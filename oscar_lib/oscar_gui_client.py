@@ -30,10 +30,12 @@ class OscarGUIClient(object):
     
     def __init__(self,oscar_url=None,username=None,password=None):
         if not oscar_url:
-            self.oscar_url = OscarClient.OSCAR_DEFAULT
+            oscar_url = OscarClient.OSCAR_DEFAULT
+           
+        self.oscar_url = oscar_url
             
         if username and password:
-            auth_client = OscarSaml(oscar_url=self.oscar_url,username=username,password=password)
+            auth_client = OscarSaml(oscar_url=oscar_url,username=username,password=password)
             
         
         #TODO: login if needed
