@@ -7,6 +7,8 @@ import datetime
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 import logging
+from .oscar_saml import OscarSaml
+from .oscar_client import OscarClient
 
 log = logging.getLogger(__name__)
 
@@ -27,8 +29,26 @@ class OscarGUIClient(object):
     
     
     def __init__(self,oscar_url=None,username=None,password=None):
-        pass
+        if not oscar_url:
+            self.oscar_url = OscarClient.OSCAR_DEFAULT
+            
+        if username and password:
+            auth_client = OscarSaml(oscar_url=self.oscar_url,username=username,password=password)
+            
         
+        #TODO: login if needed
+
+    def wigos_to_internal_id(self,wigosid):
+        """Maps the `wigosid` to the internal id of the corresponding station in OSCAR
+        Returns the `internal_id` of OSCAR.
+        """
+    
+        wigosid_search_url = self.oscar_url + OscarClient._WIGOSID_SEARCH_URL
+        rsp=self.session.get( wigosid_search_url.format(wigosid=wigosid) )
+        stations = json.loads(rsp.content)
+        
+        internal_id = int(stations[0]["id"])
+        return internal_id        
         
         
     def create_station(self,json_data,cookies,qlack_token):
@@ -49,6 +69,9 @@ class OscarGUIClient(object):
             return 500, "server processing error"
 
     def update_station(self,internal_id,json_data,cookies,qlack_token):    
+        """Updated a station in OSCAR as represented by `json_data`. 
+        This method uses the OSCAR internal API.
+        """
         
         headers = { QLACK_TOKEN_NAME:"{"+qlack_token+"}", }           
      
@@ -59,6 +82,11 @@ class OscarGUIClient(object):
         return rsp.status_code == 204
         
     def download_station(self,internal_id, **kwargs ):
+        """Downloads a JSON station representation of the station with internal id `internal_id`. 
+        Using the keyword argument `level` the amount of information in the result can be set. If set to `basic` only high level station information is returned. If set to `observation` the result also contains the list of observations. If set to`deployments` it also contains deployments and data generation.
+        The argument `observations` can be used to narrow down the list of observations that are part of the result.
+        This method uses the OSCAR internal API.
+        """
         
         filterObs = False
         if 'observations' in kwargs:
@@ -116,6 +144,10 @@ class OscarGUIClient(object):
 
 
     def extract_schedules(self,station_info, onlyActiveDeployments=True , referenceDate = datetime.datetime.today() ):
+        """Tihs method extracts schedule information from a station representation passed in `station_info` (as for example obtained from `download_station`).
+        The parameters `onlyActiveDeployments` can be used to limit the result to deplyoments that are active. The reference date can be passed in `referenceDate` (default today).
+        The result is a dictionary in which schedules are grouped by variable id. 
+        """
         
         result = {}
         if not 'observations' in station_info:

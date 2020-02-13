@@ -8,17 +8,35 @@ import re
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)            
+__pdoc__ = {} 
 
 QLACK_TOKEN_NAME = "X-Qlack-Fuse-IDM-Token-GO"
 USER_DETAILS_URL = "//rest/api/security-proxy/user-details"
 LOGOUT_URL = "//auth?logout"
 
 class OscarSaml(object):
-    
-    def __init__(self,**kwargs):
-        self.oscar_url = kwargs.get('oscarurl')
-        
 
+    # do not document deprecated methods
+    __pdoc__["OscarSaml.performLogin"] = False
+    __pdoc__["OscarSaml.performLogout"] = False
+    __pdoc__["OscarSaml.getUserCredentials"] = False
+    
+    def __init__(self,oscar_url=None,username=None,password=None):
+        """Logon to the OSCAR eIAM using `username` and `password` 
+        """    
+        
+        if not (oscar_url and username and password):
+            raise ValueError("supply url, username and password")
+        
+        self.oscar_url = oscar_url
+        info = self._login(username,password)
+        
+        if info:
+            self.qlack_token = ret["token"]
+            self.cookies = ret["cookies"]
+        else:
+            raise Exception("could not login {}".format(info))
+        
 
     def __parseTicket(self,tokenstring):
         tmp = re.sub(r'(?<={|,)([a-zA-Z][a-zA-Z0-9]*)(?=:)', r'"\1"', tokenstring.strip('"'))
@@ -102,17 +120,19 @@ class OscarSaml(object):
 
         return [params,actionurl]
 
-    def performLogout(self,cookies,qlack_token):
+    
+    
+    def logout(self):
+        """Performs a logout from OSCAR"""
 
         log.info("logging out")
     
         headers = {'Content-type':'application/json;charset=utf-8'}           
         headers = {'Accept': 'application/json' , }
-        headers[QLACK_TOKEN_NAME]  =  "{"+qlack_token+"}" 
-        r = requests.get(self.oscar_url+LOGOUT_URL , headers=headers ,  cookies=cookies )
+        headers[QLACK_TOKEN_NAME]  =  "{"+self.qlack_token+"}" 
+        r = requests.get(self.oscar_url+LOGOUT_URL , headers=headers ,  cookies=self.cookies )
         
         log.info("response {}".format(r))
-
 
         if r.status_code == 200:
             return True
@@ -120,21 +140,25 @@ class OscarSaml(object):
             return False
         
         
-    def getUserCredentials(self,cookies,qlack_token):
+
+        
+    def user_credentials(self):
+        """obtains user credentials from OSCAR"""
         
         headers = {'Content-type':'application/json;charset=utf-8'}           
         headers = {'Accept': 'application/json' , }
-        headers[QLACK_TOKEN_NAME]  =  "{"+qlack_token+"}" 
+        headers[QLACK_TOKEN_NAME]  =  "{"+self.qlack_token+"}" 
         
-        r = requests.get(self.oscar_url+USER_DETAILS_URL , headers=headers ,  cookies=cookies )
+        r = requests.get(self.oscar_url+USER_DETAILS_URL , headers=headers ,  cookies=self.cookies )
 
         if r.status_code == 200:
             login_data = json.loads(r.content)
             return login_data
         else:
             return False
-        
-    def performLogin(self,username,password):    
+    
+    
+    def _login(self,username,password):    
 
         try:        
             log.debug("step 1: oscar login button")
@@ -206,3 +230,4 @@ class OscarSaml(object):
         except Exception as e:
             log.warning("login problem.. {}".format(e))
             return False
+
