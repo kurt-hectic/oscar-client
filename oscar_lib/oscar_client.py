@@ -3,9 +3,6 @@
 import os
 import requests
 import json
-import datetime
-from jsonpath_ng import jsonpath
-from jsonpath_ng.ext import parse
 import logging
 
 #logging.basicConfig(level=logging.INFO)

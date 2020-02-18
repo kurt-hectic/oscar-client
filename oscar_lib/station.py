@@ -1,9 +1,7 @@
 import os
-import requests 
 import logging
-import xml.etree.ElementTree as ET
 from lxml import etree
-from io import BytesIO, StringIO
+from io import BytesIO
 from jsonschema import validate
 from copy import deepcopy
 import jsonschema
@@ -145,11 +143,11 @@ class Station:
     def initializeFromDict(self,mydict):
 
         affiliations = [o["affiliation"] for o in mydict["observations"] ]
-        mydict["affiliations"]=(list(set(affiliations)))
+        mydict["affiliations"]=sorted(list(set(affiliations)),reverse = True)
 
         mydict = {"station": mydict}
     
-        my_item_func = lambda x: 'observation' if x=="observations" else 'affiliation'
+        my_item_func = lambda x: 'observation' if x=="observations" else ('url' if x=='urls' else 'affiliation')
         xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
         xml = xml.replace("True","true").replace("False","false")
         self.initializeFromSimpleXML(xml)
@@ -168,24 +166,31 @@ class Station:
     
     def __init__(self,*args, **kwargs):
         logging.debug("init")
-        
         self.simplexml=None
         
         if len(args) == 1 and len(kwargs) == 0:
+            info = args[0]
             try:
-                mydict = json.loads(args[0])
-                self.initializeFromDict(mydict)
-            except json.decoder.JSONDecodeError : 
-                logger.info("input not JSON.. try XML")
-                if kwargs.get("format","wmdr") == "wmdr":
-                    self.initializeFromXML(args[0])
-                else:
-                    self.initializeFromSimpleXML(args[0])
+                if not type(info) is dict:                    
+                    mydict = json.loads(info)
+                self.initializeFromDict(info)
+            except json.decoder.JSONDecodeError: 
+                try:
+                    logger.info("input not JSON.. try XML in WMDR")
+                    self.initializeFromXML(info)
+                except etree.DocumentInvalid:
+                    logger.info("input not WMDR, trying simple XML")
+                    try:
+                        self.initializeFromSimpleXML(info)
+                    except Exception as e:
+                        logger.warning("could not parse XML {}".format(e))
+            logger.info("station initialized")
+            print("init")
         else: 
             try:
                 params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations','stationtype','status']
                 mydict = { p:kwargs[p] for p in params }
-                optional_params = ['url','description','timezone','organization']
+                optional_params = ['urls','description','timezone','organization']
                 for p in optional_params:
                     if p in kwargs:
                         mydict[p] = kwargs[p]
@@ -456,7 +461,7 @@ class Station:
     def update_schedule(self,gid,schedule,override=False):
     
         if self.invalid_schema and not override:
-            raise ValidationError("schema invalid. Fix schema by running fix_deployments first or use override=True")
+            raise Exception("schema invalid. Fix schema by running fix_deployments first or use override=True")
             
         try:
             validate( instance=schedule , schema=schedule_schema ,  format_checker=jsonschema.FormatChecker() )

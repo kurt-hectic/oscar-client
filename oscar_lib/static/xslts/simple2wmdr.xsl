@@ -61,17 +61,18 @@
 							</wmdr:validPeriod>
 						</wmdr:GeospatialLocation>
 					</wmdr:geospatialLocation>
-					<xsl:if test="station/url/text()">
+					
+					<xsl:for-each select="station/urls/url">
 						<wmdr:onlineResource>
 							<gmd:CI_OnlineResource>
 								<gmd:linkage>
 									<gmd:URL>
-										<xsl:value-of select="station/url/text()"/>
+										<xsl:value-of select="./text()"/>
 									</gmd:URL>
 								</gmd:linkage>
 							</gmd:CI_OnlineResource>
 						</wmdr:onlineResource>
-					</xsl:if>
+					</xsl:for-each>
 					<xsl:if test="station/description/text()">
 						<wmdr:description>
 							<wmdr:Description>
@@ -131,7 +132,7 @@
 						<wmdr:observation>
 							<wmdr:ObservingCapability gml:id="obsCap_{position()}">
 								<wmdr:facility xlink:href="_{../../wigosid/text()}"/>
-								<wmdr:programAffiliation xlink:href="{affiliation/text()}"/>
+								<wmdr:programAffiliation xlink:href="http://codes.wmo.int/wmdr/ProgramAffiliation/{affiliation/text()}"/>
 								<wmdr:observation>
 									<om:OM_Observation gml:id="obs_{position()}">
 										<om:type xlink:href="http://codes.wmo.int/wmdr/featureOfInterest/point"/>										
