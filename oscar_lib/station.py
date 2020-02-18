@@ -115,7 +115,7 @@ with open(mydir+"/xslts/simple2wmdr.xsl", 'r') as xslt_file:
 
 class Station:
     
-    def initializeFromXML(self,wmdr):
+    def _initializeFromXML(self,wmdr):
     
         self.syntax_error=False
         self.invalid_schema=False
@@ -140,7 +140,7 @@ class Station:
             Station.__fix_deployments(self.original_xml,mode="update",defaultSchedule=internalDefaultSchedule)
             xmlschema.assertValid(self.original_xml)
     
-    def initializeFromDict(self,mydict):
+    def _initializeFromDict(self,mydict):
 
         affiliations = [o["affiliation"] for o in mydict["observations"] ]
         mydict["affiliations"]=sorted(list(set(affiliations)),reverse = True)
@@ -150,21 +150,22 @@ class Station:
         my_item_func = lambda x: 'observation' if x=="observations" else ('url' if x=='urls' else 'affiliation')
         xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
         xml = xml.replace("True","true").replace("False","false")
-        self.initializeFromSimpleXML(xml)
+        self._initializeFromSimpleXML(xml)
         
         
-    def initializeFromSimpleXML(self,xml):
+    def _initializeFromSimpleXML(self,xml):
         xml_root = etree.fromstring(xml)
         xmlschema_simple.assertValid(xml_root)
 
         wmdr_tree  = transform_simple(xml_root) # 
-        self.initializeFromXML( str(wmdr_tree).encode("utf-8") )
+        self._initializeFromXML( str(wmdr_tree).encode("utf-8") )
         
         self.simplexml = xml
 
 
     
     def __init__(self,*args, **kwargs):
+        """initializes a Station object. The object can be initialized by passing a WMRD record as string, a string encoded JSON representation, a simplified XML representation or using keyword parameters."""
         logging.debug("init")
         self.simplexml=None
         
@@ -173,15 +174,15 @@ class Station:
             try:
                 if not type(info) is dict:                    
                     mydict = json.loads(info)
-                self.initializeFromDict(info)
+                self._initializeFromDict(info)
             except json.decoder.JSONDecodeError: 
                 try:
                     logger.info("input not JSON.. try XML in WMDR")
-                    self.initializeFromXML(info)
+                    self._initializeFromXML(info)
                 except etree.DocumentInvalid:
                     logger.info("input not WMDR, trying simple XML")
                     try:
-                        self.initializeFromSimpleXML(info)
+                        self._initializeFromSimpleXML(info)
                     except Exception as e:
                         logger.warning("could not parse XML {}".format(e))
             logger.info("station initialized")
@@ -204,7 +205,7 @@ class Station:
                                             
                     validate( instance=o["schedule"] , schema=schedule_schema_small ,  format_checker=jsonschema.FormatChecker() )
                 
-                self.initializeFromDict(mydict)
+                self._initializeFromDict(mydict)
             
             except KeyError as ke:
                 msg = "required param {} not present {}".format(ke,kwargs.keys())
@@ -219,6 +220,10 @@ class Station:
 
     
     def save(self,client,override_doublesave=False):
+        """submits the station to OSCAR using the client object passed in via `client`
+        This method allows to get around a bug in OSCAR todo with incorrect gml:id, as this method first saves the originally downloaded XML back to OSCAR,
+        therefore setting the gml:id and then re-submits the modified XML.
+        """
         self.validate(original= (not override_doublesave))
         # need to first save the original XML to make sure the gml:id are set
         if not override_doublesave:
@@ -245,10 +250,14 @@ class Station:
         logger.info("uploaded updated XML. Status: {}".format(status))
      
     def fix_and_update_datageneration(self,gid,defaultSchedule):
+        """repairs the datageneration referenced by the gml:id `gid` using the schedule information passed in `defaultSchedule`
+        additionally, the datageneration element is updated with the information passed in via `defaultSchedule`
+        """
         self.fix_datageneration(gid,defaultSchedule)
         self.update_schedule(gid,defaultSchedule,override=True)
     
     def fix_datageneration(self,gid,defaultSchedule):
+        """repairs the datageneration referenced by the gml:id `gid` using the schedule information passed in `defaultSchedule` """
         return Station.__fix_datageneration(self.xml_root,gid,defaultSchedule)
     
     def __fix_datageneration(xml_root,gid,defaultSchedule):
@@ -287,6 +296,10 @@ class Station:
         
     
     def fix_deployments(self,mode="update",defaultSchedule=None):
+        """repairs the corrupted deployments downloaded from OSCAR/Surface according to known issues with the XML export in some stations.
+        In `mode` : update the schedule and datageneration object is complemtend with the information passed in `defaultSchedule`.
+        In `mode` : delete the corrupted datageneration elements from the station
+        """
     
         if self.syntax_error:
             raise Exception("invalid XML")
@@ -391,6 +404,7 @@ class Station:
             
             
     def schedules(self): 
+        """extracts the schedules of the station and returns them grouped by variable"""
         result_tree  = transform_schedules(self.xml_root)
         
         def convert_types(path,key,value):
@@ -419,6 +433,7 @@ class Station:
         
         
     def current_schedules(self,variables=None):
+        """returns the ongoing schedules grouped by variable. Can filter by list of `variables`"""
         
         observations = self.schedules()
         
@@ -436,7 +451,9 @@ class Station:
         return observations
         
     def current_schedules_by_var(self,var_id):
-        schedules = self.schedules()
+        """returns the ongoing schedules corresponding to the variable `var_id` grouped by variable"""
+        
+        schedules = self.current_schedules()
         codelistid = "http://codes.wmo.int/wmdr/{}".format(var_id)
         
         observation = None
@@ -446,9 +463,10 @@ class Station:
                 
         return observation
         
-        #last_date = None
-        
     def get_wigos_ids(self,primary=True):
+        """returns the WIGOS ID of a station
+        Currently only returns one WIGOS ID, as WMDR does not support multiple WIGOS IDs
+        """
         xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier'
         wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
         
@@ -459,6 +477,7 @@ class Station:
 
     
     def update_schedule(self,gid,schedule,override=False):
+        """updates the schedule indicated by `gid` with the `schedule` element"""
     
         if self.invalid_schema and not override:
             raise Exception("schema invalid. Fix schema by running fix_deployments first or use override=True")
@@ -505,10 +524,18 @@ class Station:
     def __str__(self):
         return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding="unicode")
         
-    def toSimpleXML(self):
-        return self.simplexml
+    def simple_xml(self):
+        """returns the simplified XML represtnations of the station
+        The method only works if the station object has been initialized via JSON, parameters or simplifieed XML (and not when initialized by WMDR)
+        """
+        if self.simplexml:
+            return self.simplexml
+        else:
+            return None
         
     def validate(self,original=False):
+        """Validates the station against the WMDR schema"""
+        
         xmlschema.assertValid(self.xml_root)
         if original:
             try:
