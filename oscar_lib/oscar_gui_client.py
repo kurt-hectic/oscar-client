@@ -109,11 +109,11 @@ class OscarGUIClient(object):
         if current_station:
             updated_station = current_station.copy()
             
-            if primary: # set existing wigos ids to primary=false
+            if primary:
                 for wid in updated_station["wigosIds"]:
                     wid["primary"] = False
-
-            updated_station["wigosIds"].append( {"wid" : "0-32-12334-12345" , "primary" : primary } )
+            
+            updated_station["wigosIds"].append( {"wid" : wigos_id , "primary" : primary } )
 
             return self.update_station(internal_id,updated_station)
             
@@ -153,22 +153,22 @@ class OscarGUIClient(object):
             return 500, "server processing error"    
     
     
-    def update_station(self,internal_id,json_data):    
-        """Updated a station in OSCAR as represented by `json_data`. 
+    def update_station(self,internal_id,station_data):    
+        """Updated a station in OSCAR as represented by `station_data`. 
         This method uses the OSCAR internal API.
         """
         
         headers = { OscarGUIClient._QLACK_TOKEN_NAME:"{"+self.token+"}", }           
         cookies = self.cookies
      
-        json_data["wmoIndex"] = {}
-        json_data["submitNewStation"] = False
+        station_data["wmoIndex"] = {}
+        station_data["submitNewStation"] = False
      
         station_update_url = (self.oscar_url + OscarGUIClient._STATION_UPDATE_URL).format(internal_id=internal_id) 
-        rsp=self.session.post( station_update_url , json=json_data , headers=headers , cookies=cookies )
-        log.debug("updating station details of {} with header: {} ({}) cookies: {} and data: {}".format(station_update_url,rsp.status_code,headers,cookies,json_data))
+        rsp=self.session.post( station_update_url , json=station_data , headers=headers , cookies=cookies )
+        log.debug("updating station details of {} with header: {} ({}) cookies: {} and data: {}".format(station_update_url,rsp.status_code,headers,cookies,station_data))
         
-        return rsp.status_code == 204
+        return rsp.status_code
         
     def download_station(self,internal_id, **kwargs ):
         """Downloads a JSON station representation of the station with internal id `internal_id`. 
