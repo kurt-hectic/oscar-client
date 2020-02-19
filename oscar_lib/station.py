@@ -186,7 +186,6 @@ class Station:
                     except Exception as e:
                         logger.warning("could not parse XML {}".format(e))
             logger.info("station initialized")
-            print("init")
         else: 
             try:
                 params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations','stationtype','status']

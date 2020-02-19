@@ -37,6 +37,10 @@ class OscarGUIClient(object):
         if username and password:
             auth_client = OscarSaml(oscar_url=oscar_url,username=username,password=password)
             
+            self.session = requests.Session()
+            
+            self.token = auth_client.qlack_token
+            self.cookies = auth_client.cookies
         
         #TODO: login if needed
 
@@ -70,6 +74,28 @@ class OscarGUIClient(object):
         else:
             return 500, "server processing error"
 
+    def add_wigos_id(self,internal_id,wigos_id,primary=False):
+        """Adds the WIGOS ID passed in `wigos_id` to the station `internal_id`. 
+        The parameter `primary` with default value False indicates if this new WIGOS ID is the primary WIGOS iD"""
+        headers = { QLACK_TOKEN_NAME:"{"+qlack_token+"}", }           
+        
+        current_status_url = (self.oscar_url +     "/rest/api/stations/station/{internal_id}/false/secure".format(intetrnal_id=internal_id))
+        log.debug("getting current station represenation {} with header: {} cookies: {}".format(current_status_url,headers,cookies))
+        current_station = self.session.get( current_status_url )
+        
+        
+        current_observations_url = (self.oscar_url + "/rest/api/stations/stationObservations/{internal_id}".format(internal_id=internal_id) )
+        log.debug("getting current station observations {} with header: {} cookies: {}".format(current_observations_url,headers,cookies))
+        current_observations = self.session.get( current_status_url )
+        
+        if current_station.status_code == 200 and current_observations.status_code == 200:
+            station = current_station.json()
+            station["observations"] = current_observations.json()
+        else:
+            return 500, "server processing error"
+    
+    
+    
     def update_station(self,internal_id,json_data,cookies,qlack_token):    
         """Updated a station in OSCAR as represented by `json_data`. 
         This method uses the OSCAR internal API.
