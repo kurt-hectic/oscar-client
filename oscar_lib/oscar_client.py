@@ -19,7 +19,6 @@ class OscarClient(object):
 
 
     _OSCAR_SEARCH_URL = '//rest/api/search/station'
-    _WIGOSID_SEARCH_URL = '//rest/api/stations/approvedStations/wigosIds?q={wigosid}'
     _STATION_SEARCH_URL = '//rest/api/search/station?stationClass={stationClass}'
     _STATION_XML_UPLOAD = '//rest/api/wmd/upload'
     _STATION_XML_DOWNLOAD = '//rest/api/wmd/download/'

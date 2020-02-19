@@ -23,7 +23,8 @@ class OscarGUIClient(object):
     _STATION_OBSERVATIONS_URL = '/rest/api/stations/stationObservations/{internal_id}'
     _STATION_CREATION_URL = '/rest/api/stations/station'
     _STATION_PREP_UPDATE = "/rest/api/stations/station/{internal_id}/false/secure"
-    
+    _WIGOSID_SEARCH_URL = '/rest/api/stations/approvedStations/wigosIds?q={wigosid}'
+
     
     _QLACK_TOKEN_NAME = "X-Qlack-Fuse-IDM-Token-GO"
     
@@ -49,11 +50,14 @@ class OscarGUIClient(object):
         Returns the `internal_id` of OSCAR.
         """
     
-        wigosid_search_url = self.oscar_url + OscarClient._WIGOSID_SEARCH_URL
+        wigosid_search_url = self.oscar_url + OscarGUIClient._WIGOSID_SEARCH_URL
         rsp=self.session.get( wigosid_search_url.format(wigosid=wigosid) )
-        stations = json.loads(rsp.content)
+        stations = rsp.json()
         
-        internal_id = int(stations[0]["id"])
+        if stations["total"] == 0:
+            return None
+        
+        internal_id = int(stations["resultList"][0]["id"])
         return internal_id        
         
         
