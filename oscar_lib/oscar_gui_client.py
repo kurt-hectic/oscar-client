@@ -15,14 +15,14 @@ log = logging.getLogger(__name__)
 class OscarGUIClient(object):
 
 
-    _STATION_EDIT_URL = '//rest/api/stations/canEdit/station/{internal_id}'
-    _STATION_UPDATE_URL = '//rest/api/stations/station-put/{internal_id}'
-    _STATION_DETAILS_URL = '//rest/api/stations/station/{internal_id}/stationReport'
-    _STATION_OSERVATIONS_GROUPING_URL = '//rest/api/stations/observation/grouping/{internal_id}'
-    _DEPLOYMENT_URL = '//rest/api/stations/deployments/{observation_id}'
-    _STATION_OBSERVATIONS_URL = '//rest/api/stations/stationObservations/{internal_id}'
-    _STATION_CREATION_URL = '//rest/api/stations/station'
-    
+    _STATION_EDIT_URL = '/rest/api/stations/canEdit/station/{internal_id}'
+    _STATION_UPDATE_URL = '/rest/api/stations/station-put/{internal_id}'
+    _STATION_DETAILS_URL = '/rest/api/stations/station/{internal_id}/stationReport'
+    _STATION_OSERVATIONS_GROUPING_URL = '/rest/api/stations/observation/grouping/{internal_id}'
+    _DEPLOYMENT_URL = '/rest/api/stations/deployments/{observation_id}'
+    _STATION_OBSERVATIONS_URL = '/rest/api/stations/stationObservations/{internal_id}'
+    _STATION_CREATION_URL = '/rest/api/stations/station'
+    _STATION_PREP_UPDATE = "/rest/api/stations/station/{internal_id}/false/secure"
     
     
     _QLACK_TOKEN_NAME = "X-Qlack-Fuse-IDM-Token-GO"
@@ -61,7 +61,7 @@ class OscarGUIClient(object):
         """Creates a station in OSCAR as represented by `json_data`. 
         This method uses the OSCAR internal API.
         """
-        headers = { QLACK_TOKEN_NAME:"{"+qlack_token+"}", }           
+        headers = { OscarGUIClient._QLACK_TOKEN_NAME:"{"+qlack_token+"}", }           
      
         station_creation_url = (self.oscar_url + OscarClient._STATION_CREATION_URL) 
         log.debug("creating new station at {} with header: {} cookies: {} and data: {}".format(station_creation_url,headers,cookies,json_data))
@@ -73,39 +73,96 @@ class OscarGUIClient(object):
             return 400, json.loads( rsp.content )
         else:
             return 500, "server processing error"
+            
+            
+    def _prepare_update(self,internal_id):
+        headers = { OscarGUIClient._QLACK_TOKEN_NAME:"{"+self.token+"}", }           
+        cookies = self.cookies
+        
+        current_status_url = (self.oscar_url +   OscarGUIClient._STATION_PREP_UPDATE.format(internal_id=internal_id))
+        current_station = self.session.get( current_status_url , headers=headers, cookies=cookies  )
+        log.debug("getting current station represenation {} ({}) with header: {} cookies: {}".format(current_status_url,current_station.status_code,headers,self.cookies))
+        
+        current_observations_url = (self.oscar_url + OscarGUIClient._STATION_OBSERVATIONS_URL.format(internal_id=internal_id) )
+        current_observations = self.session.get( current_observations_url , headers=headers, cookies=cookies)
+        log.debug("getting current station observations {} ({}) with header: {} cookies: {}".format(current_observations_url,current_observations.status_code,headers,self.cookies))
+        
+        if current_station.status_code == 200 and current_observations.status_code == 200:
+            updated_station = current_station.json()
+            updated_station["observations"] = current_observations.json()
+            
+            return updated_station
+        else:
+            return None
+        
 
     def add_wigos_id(self,internal_id,wigos_id,primary=False):
         """Adds the WIGOS ID passed in `wigos_id` to the station `internal_id`. 
         The parameter `primary` with default value False indicates if this new WIGOS ID is the primary WIGOS iD"""
-        headers = { QLACK_TOKEN_NAME:"{"+qlack_token+"}", }           
         
-        current_status_url = (self.oscar_url +     "/rest/api/stations/station/{internal_id}/false/secure".format(intetrnal_id=internal_id))
-        log.debug("getting current station represenation {} with header: {} cookies: {}".format(current_status_url,headers,cookies))
-        current_station = self.session.get( current_status_url )
+        current_station = self._prepare_update(internal_id)
         
-        
-        current_observations_url = (self.oscar_url + "/rest/api/stations/stationObservations/{internal_id}".format(internal_id=internal_id) )
-        log.debug("getting current station observations {} with header: {} cookies: {}".format(current_observations_url,headers,cookies))
-        current_observations = self.session.get( current_status_url )
-        
-        if current_station.status_code == 200 and current_observations.status_code == 200:
-            station = current_station.json()
-            station["observations"] = current_observations.json()
+        if current_station:
+            updated_station = current_station.copy()
+            
+            if primary: # set existing wigos ids to primary=false
+                for wid in updated_station["wigosIds"]:
+                    wid["primary"] = False
+
+            updated_station["wigosIds"].append( {"wid" : "0-32-12334-12345" , "primary" : primary } )
+
+            return self.update_station(internal_id,updated_station)
+            
         else:
             return 500, "server processing error"
+
+    def add_timezone(self,internal_id,timezone,valid_since=None):
+        """Adds the timezone specified in `timezone` to the station `internal_id`. 
+        The parameter `valid_since` with default value today indicates from when the change takes effect"""
+        
+        # copy and paste from https://oscardepl.wmo.int/surface/rest/api/referenceData/list/TimezoneRef
+        timezone_ids = { e["name"]:e["id"] for e in json.loads('[{"id":40,"name":"UTC-12"},{"id":39,"name":"UTC-11"},{"id":38,"name":"UTC-10"},{"id":37,"name":"UTC-9.5"},{"id":36,"name":"UTC-9"},{"id":35,"name":"UTC-8"},{"id":34,"name":"UTC-7"},{"id":33,"name":"UTC-6"},{"id":32,"name":"UTC-5"},{"id":31,"name":"UTC-4.5"},{"id":30,"name":"UTC-4"},{"id":29,"name":"UTC-3.5"},{"id":28,"name":"UTC-3"},{"id":27,"name":"UTC-2"},{"id":26,"name":"UTC-1"},{"id":1,"name":"UTC"},{"id":2,"name":"UTC+1"},{"id":3,"name":"UTC+2"},{"id":4,"name":"UTC+3"},{"id":5,"name":"UTC+3.5"},{"id":6,"name":"UTC+4"},{"id":7,"name":"UTC+4.5"},{"id":8,"name":"UTC+5"},{"id":9,"name":"UTC+5.5"},{"id":10,"name":"UTC+5.65"},{"id":11,"name":"UTC+6"},{"id":12,"name":"UTC+6.5"},{"id":13,"name":"UTC+7"},{"id":14,"name":"UTC+8"},{"id":15,"name":"UTC+8.65"},{"id":16,"name":"UTC+9"},{"id":17,"name":"UTC+9.5"},{"id":18,"name":"UTC+10"},{"id":19,"name":"UTC+10.5"},{"id":20,"name":"UTC+11"},{"id":21,"name":"UTC+11.5"},{"id":22,"name":"UTC+12"},{"id":23,"name":"UTC+12.65"},{"id":24,"name":"UTC+13"},{"id":25,"name":"UTC+14"}]') }
+        
+        current_station = self._prepare_update(internal_id)
+        
+        if current_station:
+            updated_station = current_station.copy()
+
+            if not 'timezones' in updated_station:
+                updated_station["timezones"] = []
+            
+            if not timezone in timezone_ids:
+                raise ValueError("{} not a valid timezone.. choose from {}".format(timezone,timezone_ids))
+            timezone_id =  timezone_ids[timezone]
+            
+            if not valid_since:
+                valid_since = datetime.date.today().strftime("%Y-%m-%d")
+            else:
+                valid_since = datatime.strptime(valid_since,"%Y-%m-%d").strftime("%Y-%m-%d")
+            
+            updated_station["timezones"].append( 
+                {"validSince":valid_since,"timezoneId":timezone_id,"usedTimezones":None,"timezoneName":timezone} ) 
+            
+            return self.update_station(internal_id,updated_station)
+            
+        else:
+            return 500, "server processing error"    
     
     
-    
-    def update_station(self,internal_id,json_data,cookies,qlack_token):    
+    def update_station(self,internal_id,json_data):    
         """Updated a station in OSCAR as represented by `json_data`. 
         This method uses the OSCAR internal API.
         """
         
-        headers = { QLACK_TOKEN_NAME:"{"+qlack_token+"}", }           
+        headers = { OscarGUIClient._QLACK_TOKEN_NAME:"{"+self.token+"}", }           
+        cookies = self.cookies
      
-        station_update_url = (self.oscar_url + OscarClient._STATION_UPDATE_URL).format(internal_id=internal_id) 
-        log.debug("updating station details of {} with header: {} cookies: {} and data: {}".format(station_update_url,headers,cookies,json_data))
+        json_data["wmoIndex"] = {}
+        json_data["submitNewStation"] = False
+     
+        station_update_url = (self.oscar_url + OscarGUIClient._STATION_UPDATE_URL).format(internal_id=internal_id) 
         rsp=self.session.post( station_update_url , json=json_data , headers=headers , cookies=cookies )
+        log.debug("updating station details of {} with header: {} ({}) cookies: {} and data: {}".format(station_update_url,rsp.status_code,headers,cookies,json_data))
         
         return rsp.status_code == 204
         
