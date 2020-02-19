@@ -142,7 +142,7 @@ class OscarGUIClient(object):
             if not valid_since:
                 valid_since = datetime.date.today().strftime("%Y-%m-%d")
             else:
-                valid_since = datatime.strptime(valid_since,"%Y-%m-%d").strftime("%Y-%m-%d")
+                valid_since = datetime.datetime.strptime(valid_since,"%Y-%m-%d").strftime("%Y-%m-%d")
             
             updated_station["timezones"].append( 
                 {"validSince":valid_since,"timezoneId":timezone_id,"usedTimezones":None,"timezoneName":timezone} ) 
