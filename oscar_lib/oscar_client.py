@@ -1,44 +1,50 @@
+"""This module is responsible for the interactions with the OSCAR/Surface system"""
+
 import os
 import requests
 import json
-import datetime
-from jsonpath_ng import jsonpath
-from jsonpath_ng.ext import parse
 import logging
-
 
 #logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
+__pdoc__ = {} 
 
 class OscarClient(object):
 
-    STATION_EDIT_URL = '//rest/api/stations/canEdit/station/{internal_id}'
-    STATION_UPDATE_URL = '//rest/api/stations/station-put/{internal_id}'
-    WIGOSID_SEARCH_URL = '//rest/api/stations/approvedStations/wigosIds?q={wigosid}'
-    STATION_SEARCH_URL = '//rest/api/search/station?stationClass={stationClass}'
-    STATION_DETAILS_URL = '//rest/api/stations/station/{internal_id}/stationReport'
-    STATION_OSERVATIONS_GROUPING_URL = '//rest/api/stations/observation/grouping/{internal_id}'
-    DEPLOYMENT_URL = '//rest/api/stations/deployments/{observation_id}'
-    STATION_OBSERVATIONS_URL = '//rest/api/stations/stationObservations/{internal_id}'
-    STATION_CREATION_URL = '//rest/api/stations/station'
-    STATION_XML_UPLOAD = '//rest/api/wmd/upload'
-    STATION_XML_DOWNLOAD = '//rest/api/wmd/download/'
 
-    OSCAR_SEARCH_URL = '//rest/api/search/station'
+    # do not document deprecated methods
+    __pdoc__["OscarClient.oscarSearch"] = False
+    __pdoc__["OscarClient.uploadXML"] = False
+    __pdoc__["OscarClient.getInternalIDfromWigosId"] = False
+
+
+    _OSCAR_SEARCH_URL = '//rest/api/search/station'
+    _STATION_SEARCH_URL = '//rest/api/search/station?stationClass={stationClass}'
+    _STATION_XML_UPLOAD = '//rest/api/wmd/upload'
+    _STATION_XML_DOWNLOAD = '//rest/api/wmd/download/'
 
     OSCAR_DEFAULT = 'https://oscar.wmo.int/surface'
+    """The URL of the production system"""
+    
     OSCAR_DEPL = "https://oscardepl.wmo.int/surface"
+    """The URL of the testing system"""
 
-    QLACK_TOKEN_NAME = "X-Qlack-Fuse-IDM-Token-GO"
 
-
-    def __init__(self,**kwargs):
-        self.oscar_url = kwargs.get('oscarurl',OscarClient.OSCAR_DEFAULT)
-        self.token = kwargs.get('token',None)
+    def __init__(self,oscar_url=None,token=None):
+        """
+        Initializes an OSCAR client instance, where `oscar_url` is the URL of OSCAR, defaulting to the production system,
+        `token` is the OSCAR API token needed for write operations.
+        """
+        self.oscar_url = oscar_url if oscar_url else OscarClient.OSCAR_DEFAULT
+        self.token = token
         self.session = requests.Session()
 
-    def uploadXML(self,xml):
+
+    def upload_XML(self,xml):
+        """
+        Uploads the string content passed in `xml` as WMDR to OSCAR.
+        Returns `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR` or `SERVER_ERROR`
+        """
     
         if not self.token:
             raise AttributeError("no token configured.. cannot upload")
@@ -46,225 +52,115 @@ class OscarClient(object):
         headers = { 'X-WMO-WMDR-Token' : self.token } 
 
         content = xml.encode("utf8")
-        xml_upload_url = self.oscar_url + OscarClient.STATION_XML_UPLOAD
-
-        response = requests.post( xml_upload_url , data=content , headers=headers  )
+        xml_upload_url = self.oscar_url + OscarClient._STATION_XML_UPLOAD
 
         status=None
-        if response.status_code ==  200:
-            # reponse:
-            response = json.loads(response.content)
-            if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
-                log.info("upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"]))
-            else:
-                log.info("upload failed.. the log is {logs}".format(logs=response["logs"]) )
+        with requests.post( xml_upload_url , data=content , headers=headers  ) as response:
 
-            status = response["xmlStatus"]
-        
-        elif response.status_code == 401:
-            log.info("Access not granted (401) error")
-            status = "AUTH_ERROR"        
-        else:
-            log.info("processing error on server side {} {}".format(response.status_code,response.content))
-            status = "SERVER_ERROR"
+            if response.status_code ==  200:
+                # reponse:
+                response = json.loads(response.content)
+                if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
+                    log.info("upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"]))
+                else:
+                    log.info("upload failed.. the log is {logs}".format(logs=response["logs"]) )
+
+                status = response["xmlStatus"]
+            
+            elif response.status_code == 401:
+                log.info("Access not granted (401) error")
+                status = "AUTH_ERROR"        
+            else:
+                log.info("processing error on server side {} {}".format(response.status_code,response.content))
+                status = "SERVER_ERROR"
             
         return status
 
-    def load_station(self,wigos_id=None,internal_id=None,cache=False):
-        if not wigos_id and not internal_id:
-            raise ValueError("need either wigos id or internal ID")
+    def load_station(self,wigos_id=None,cache=False):
+        """Loads the station identified by its WIGOS ID `wigos_id` as WMDR XML.
+        If a directory path `cache` is supplied, the method will try to load a station from this directory instead of loading it from OSCAR/Surface. 
+        In case the station is not cached, it will be loaded as usual from OSCAR/Surface and then saved to file in the cache directory.
+        This method uses the OSCAR/Surface internal API that is used by the GUI.
+        Returns a representation of the station in WMDR XML.
+        """
+        if not wigos_id:
+            raise ValueError("need to supply wigos")
             
         if cache:
             cachedir="cache/"
         
-            if wigos_id:
-                cache_filename = os.path.join(cachedir,"wigos-id-{}.xml".format(wigos_id))
-            else:
-                cache_filename = os.path.join(cachedir,"internal-id-{}.xml".format(internal_id))
+            cache_filename = os.path.join(cachedir,"wigos-id-{}.xml".format(wigos_id))
                 
             if os.path.isfile(cache_filename):
                 return open(cache_filename,"rb").read()
         
-        if not wigos_id:
-            log.debug("trying to get wigos id for {}".format(internal_id))
-            r = requests.get(self.oscar_url + "//rest/api/stations/station/{}/stationReport".format(internal_id))
-            if r.status_code != 200:
-                raise KeyError("{} not contained in OSCAR or cannot be downloaded {}".format(internal_id, r ))
-
-            json = r.json()
-            
-            for wid in json["wigosIds"]:
-                if wid["primary"]:
-                    wigos_id = wid["wid"]
-                    
-            if not wigos_id:
-                raise ValueError("station has not primary WIGOS ID")
-        
         log.debug("getting XML for {}".format(wigos_id))
-        r = requests.get(self.oscar_url + OscarClient.STATION_XML_DOWNLOAD + wigos_id )
+        with requests.get(self.oscar_url + OscarClient._STATION_XML_DOWNLOAD + wigos_id ) as r:
         
-        if r.status_code != 200:
-            raise KeyError("{} not contained in OSCAR or cannot be downloaded".format(wigos_id))
-            
+            if r.status_code != 200:
+                raise KeyError("{} not contained in OSCAR or cannot be downloaded".format(wigos_id))
         
-        wmdr = r.content 
+            wmdr = r.content 
         
-        if cache:
-            with open(cache_filename,"wb") as f:
-                f.write(wmdr)
+            if cache:
+                with open(cache_filename,"wb") as f:
+                    f.write(wmdr)
 
-        return wmdr
-
-    def oscarSearch(self,params={}):
-       oscar_search_url = self.oscar_url + OscarClient.OSCAR_SEARCH_URL
-       log.info("searching for {} at {}".format(params,oscar_search_url))
-       rsp = self.session.get( oscar_search_url , params=params )
-       
-       if rsp.status_code == 200:
-          myjson={}
-          myjson["data"] = json.loads(rsp.content)
-          myjson["meta"] = { 'length' : len(myjson["data"]) }
-          
-          return myjson 
-
-       else:
-          ret = {}
-          ret["status_code"] = rsp.status_code
-          ret["message"] = str(rsp.content) 
-
-          return ret
-       
-    def getInternalIDfromWigosId(self,wigosid):
-        wigosid_search_url = self.oscar_url + OscarClient.WIGOSID_SEARCH_URL
-        rsp=self.session.get( wigosid_search_url.format(wigosid=wigosid) )
-        stations = json.loads(rsp.content)
-        internal_id = stations[0]["id"]
-        return internal_id
-     
-
-    def createStation(self,json_data,cookies,qlack_token):
-        headers = { QLACK_TOKEN_NAME:"{"+qlack_token+"}", }           
-     
-        station_creation_url = (self.oscar_url + OscarClient.STATION_CREATION_URL) 
-        logging.debug("creating new station at {} with header: {} cookies: {} and data: {}".format(station_creation_url,headers,cookies,json_data))
-        rsp=self.session.post( station_creation_url , json=json_data , headers=headers , cookies=cookies )
+            return wmdr
         
-        if rsp.status_code == 200:
-            return 200, int(rsp.content)
-        if rsp.status_code == 400:
-            return 400, json.loads( rsp.content )
+        
+    def wigos_to_internal_id(self,wigos_id):
+        """Maps the `wigosid` to the internal id of the corresponding station in OSCAR
+        Returns the `internal_id` of OSCAR.
+        """
+    
+        res = self.oscar_search( {"wigosId" : wigos_id } )
+        
+        if 'data' in res and res["meta"]["length"]==1:
+            return int(res["data"][0]["id"])
         else:
-            return 500, "server processing error"
-
-    def updateStation(self,internal_id,json_data,cookies,qlack_token):    
-        
-        headers = { QLACK_TOKEN_NAME:"{"+qlack_token+"}", }           
-     
-        station_update_url = (self.oscar_url + OscarClient.STATION_UPDATE_URL).format(internal_id=internal_id) 
-        logging.debug("updating station details of {} with header: {} cookies: {} and data: {}".format(station_update_url,headers,cookies,json_data))
-        rsp=self.session.post( station_update_url , json=json_data , headers=headers , cookies=cookies )
-        
-        return rsp.status_code == 204
-        
-    def getFullStationJson(self,internal_id, **kwargs ):
-        
-        filterObs = False
-        if 'observations' in kwargs:
-            filterObs = True
-            validObservations = kwargs['observations']
-            logging.debug("limiting observations to {}".format(validObservations))
-
-        level = 0
-        if 'level' in kwargs:
-            if kwargs["level"] == 'basic':
-                level = 0
-            if kwargs["level"] == 'observations':
-                level = 1
-            if kwargs["level"] == 'deployments':
-                level = 2
-            
-        station_details_url = self.oscar_url + OscarClient.STATION_DETAILS_URL
-        logging.debug("getting station details for {} from {}".format(internal_id,station_details_url))
-        rsp=self.session.get( station_details_url.format(internal_id=internal_id) )
-        
-        if not rsp.status_code == 200:
-            logging.debug("station {} not found".format(internal_id))
             return None
-            
-        station_info = json.loads(rsp.content)
 
-        if level > 0:
-            logging.info("getting station observation groups for {}".format(internal_id))
-            #station_observations_grouping_url = self.oscar_url +  STATION_OSERVATIONS_GROUPING_URL
-            station_observations_url = (self.oscar_url + OscarClient.STATION_OBSERVATIONS_URL).format(internal_id=internal_id)
-            rsp=self.session.get( station_observations_url )
-            observations = json.loads(rsp.content)
 
-            station_info["observations"] = observations
+    def oscar_search(self,params={}):
+        """Performs a search in OSCAR for stations according to the parameters supplied.
+        Returns a JSON structure with the result in the field `data` and meta information such as the length of the result contained in the field `meta`.
+        The parameters and accepted values are documented in the OSCAR/Surface User Manual https://library.wmo.int/index.php?lvl=notice_display&id=20824#.XkQE9Ij_rRb
+        """
+        oscar_search_url = self.oscar_url + OscarClient._OSCAR_SEARCH_URL
+        log.info("searching for {} at {}".format(params,oscar_search_url))
+        with self.session.get( oscar_search_url , params=params ) as rsp:
+            if rsp.status_code == 200:
+                myjson={}
+                myjson["data"] = json.loads(rsp.content)
+                myjson["meta"] = { 'length' : len(myjson["data"]) }
 
-            if level > 1:
-                
-                for observation in observations: 
-                    observation_id = int(observation['id'])
-                    
-                    logging.info("getting deployment {}".format(observation_id))
-                    deployment_url = (self.oscar_url + OscarClient.DEPLOYMENT_URL).format(observation_id=observation_id)
-                    rsp = self.session.get( deployment_url )
-                    
-                    deployments = []
-                    if rsp.status_code == 200:
-                        deployments = json.loads(rsp.content)
-                    
-                    observation['deployments'] = deployments
+                return myjson 
 
+            else:
+                ret = {}
+                ret["status_code"] = rsp.status_code
+                ret["message"] = str(rsp.content) 
+
+                return ret
+       
+
+    def close(self):
+        """Return allocated ressources"""
+        self.session.close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
         
-        if not 'dateEstablished' in station_info:
-            station_info["dateEstablished"] = None
+    # backwards compatibility methods
+    def uploadXML(self,xml):
+        log.warning("deprecated: use upload_XML instead")
+        return self.upload_XML(xml)
         
-        return station_info
-
-
-    def extractSchedulesByVariable(self,station_info, onlyActiveDeployments=True , referenceDate = datetime.datetime.today() ):
+    def oscarSearch(self,params={}):
+        log.warning("deprecated: use oscar_search instead")
+        return self.oscar_search(params)
         
-        result = {}
-        if not 'observations' in station_info:
-            return result
-        
-        observations = station_info['observations'] 
-        
-        for observation in observations:
-            var_id = observation['observAccordionId'].split('_')[0]
-            result[var_id] = []
-            
-            if not 'deployments' in observation:
-                continue
-            
-            deployments = observation['deployments']
-            
-            for deployment in deployments:
-                if onlyActiveDeployments:
-                    datefrom = datetime.strptime(deployment['observationSince'],'%Y-%m-%d') if 'observationSince' in deployment else datetime.datetime(datetime.MINYEAR,1,1)
-                    dateto =  datetime.strptime(deployment['observationTill'],'%Y-%m-%d') if 'observationTill' in deployment else datetime.datetime(datetime.MAXYEAR,1,1)
-
-                    if not ( datefrom <= referenceDate and referenceDate <= referenceDate ):
-                        logging.debug("skipping date from: {} to: {} today:".format(datefrom,dateto,referenceDate))
-                        continue
-                    
-                if not 'dataGenerations' in deployment:
-                    continue
-                  
-                data_generations = deployment['dataGenerations']
-                
-            for data_generation in data_generations:
-                if not ( 'schedule' in data_generation and 'reporting' in data_generation   ) :
-                   logging.debug("skipping DG due to incomplete information {}".format(data_generation))
-                   continue
-
-                schedule = data_generation['schedule']
-                reporting = data_generation['reporting']
-                logging.debug("adding schedule and reporting info to result")
-                result[var_id].append( { 'schedule' : schedule , 'reporting': reporting } )
-
-                    
-        return result
-             
+    def getInternalIDfromWigosId(self,wigosid):
+        log.warning("deprecated: use wigos_to_internal_id instead")
+        return self.wigos_to_internal_id(wigosid)

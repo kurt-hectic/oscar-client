@@ -105,4 +105,7 @@ venv.bak/
 
 cache/
 tmp/
-tests/
+test_files/
+docs/
+run.py
+test.xml

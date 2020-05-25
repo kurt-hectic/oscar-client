@@ -1,9 +1,7 @@
-import os,sys
-import requests 
+import os
 import logging
-import xml.etree.ElementTree as ET
 from lxml import etree
-from io import BytesIO, StringIO
+from io import BytesIO
 from jsonschema import validate
 from copy import deepcopy
 import jsonschema
@@ -13,6 +11,8 @@ from dicttoxml import dicttoxml
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logger = logging.getLogger()
+logging.getLogger("dicttoxml").setLevel(logging.WARNING)
+
 
 mydir = os.path.dirname(__file__) + "/static/"
 
@@ -69,10 +69,11 @@ class DTDResolver(etree.Resolver):
             url = url.replace(d,"")
         
         filename = mydir+"/xml-schemas" + url
+        logger.debug("resolving XML schema {} to {}".format(url, filename))
         return self.resolve_filename( filename, context )
 
 
-logger.info("loading schema files")
+logger.debug("loading schema files")
 # open and read schema file
 with open(mydir+"/xml-schemas/wmdr_RC9.xsd", 'r') as schema_file:
     schema_to_check = schema_file
@@ -82,7 +83,7 @@ with open(mydir+"/xml-schemas/wmdr_RC9.xsd", 'r') as schema_file:
 
     xmlschema_doc = etree.parse(schema_to_check,parser)
     xmlschema = etree.XMLSchema(xmlschema_doc)
-    logger.info("schema parsed sucessfully")
+    logger.debug("schema parsed sucessfully")
 
 # open and read schema file for simple station type    
 with open(mydir+"/xml-schemas/simplestation.xsd", 'r') as schema_file:
@@ -93,28 +94,38 @@ with open(mydir+"/xml-schemas/simplestation.xsd", 'r') as schema_file:
 
     xmlschema_doc_simple = etree.parse(schema_to_check,parser)
     xmlschema_simple = etree.XMLSchema(xmlschema_doc_simple)
-    logger.info("schema parsed sucessfully")
+    logger.debug("schema parsed sucessfully")
     
 
-logger.info("loading XSLT files")
+logger.debug("loading XSLT files")
 # open and read schema file
 with open(mydir+"/xslts/wmdr2schedule.xsl", 'r') as xslt_file:
     xslt_root  = etree.parse(xslt_file)
     transform_schedules = etree.XSLT(xslt_root)
 
-    logger.info("XSLT parsed sucessfully")
+    logger.debug("XSLT parsed sucessfully")
+
+# open and read schema file
+with open(mydir+"/xslts/insert_contact.xsl", 'r') as xslt_file:
+    xslt_root  = etree.parse(xslt_file)
+    transform_insertcontact = etree.XSLT(xslt_root)
+
+    logger.debug("XSLT parsed sucessfully")
+
 
 # open and read schema file
 with open(mydir+"/xslts/simple2wmdr.xsl", 'r') as xslt_file:
     xslt_root  = etree.parse(xslt_file)
     transform_simple = etree.XSLT(xslt_root)
 
-    logger.info("XSLT simple2wmdr parsed sucessfully")
+    logger.debug("XSLT simple2wmdr parsed sucessfully")
+
+
 
 
 class Station:
     
-    def initializeFromXML(self,wmdr):
+    def _initializeFromXML(self,wmdr):
     
         self.syntax_error=False
         self.invalid_schema=False
@@ -139,23 +150,20 @@ class Station:
             Station.__fix_deployments(self.original_xml,mode="update",defaultSchedule=internalDefaultSchedule)
             xmlschema.assertValid(self.original_xml)
     
-    def initializeFromDict(self,mydict):
+    def _initializeFromDict(self,mydict):
 
         affiliations = [o["affiliation"] for o in mydict["observations"] ]
-        mydict["affiliations"]=(list(set(affiliations)))
-        
-        if not isinstance(mydict["urls"],list):
-            mydict["urls"] = (mydict["urls"],)
-        
+        mydict["affiliations"]=sorted(list(set(affiliations)),reverse = True)
+
         mydict = {"station": mydict}
     
-        my_item_func = lambda x: 'observation' if x=="observations" else ("url" if x=="urls" else 'affiliation')
+        my_item_func = lambda x: 'observation' if x=="observations" else ('url' if x=='urls' else 'affiliation')
         xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
         xml = xml.replace("True","true").replace("False","false")
-        self.initializeFromSimpleXML(xml)
+        self._initializeFromSimpleXML(xml)
         
         
-    def initializeFromSimpleXML(self,xml):
+    def _initializeFromSimpleXML(self,xml):
         xml_root = etree.fromstring(xml)
         
         try:
@@ -165,27 +173,34 @@ class Station:
             sys.exit(1)
 
         wmdr_tree  = transform_simple(xml_root) # 
-        self.initializeFromXML( str(wmdr_tree).encode("utf-8") )
+        self._initializeFromXML( str(wmdr_tree).encode("utf-8") )
         
         self.simplexml = xml
 
 
     
     def __init__(self,*args, **kwargs):
+        """initializes a Station object. The object can be initialized by passing a WMRD record as string, a string encoded JSON representation, a simplified XML representation or using keyword parameters."""
         logging.debug("init")
-        
         self.simplexml=None
         
         if len(args) == 1 and len(kwargs) == 0:
+            info = args[0]
             try:
-                mydict = json.loads(args[0])
-                self.initializeFromDict(mydict)
-            except json.decoder.JSONDecodeError : 
-                logger.info("input not JSON.. try XML")
-                if kwargs.get("format","wmdr") == "wmdr":
-                    self.initializeFromXML(args[0])
-                else:
-                    self.initializeFromSimpleXML(args[0])
+                if not type(info) is dict:                    
+                    mydict = json.loads(info)
+                self._initializeFromDict(info)
+            except json.decoder.JSONDecodeError: 
+                try:
+                    logger.debug("input not JSON.. try XML in WMDR")
+                    self._initializeFromXML(info)
+                except etree.DocumentInvalid:
+                    logger.debug("input not WMDR, trying simple XML")
+                    try:
+                        self._initializeFromSimpleXML(info)
+                    except Exception as e:
+                        logger.warning("could not parse XML {}".format(e))
+            logger.debug("station initialized")
         else: 
             try:
                 params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations','stationtype','status']
@@ -204,7 +219,7 @@ class Station:
                                             
                     validate( instance=o["schedule"] , schema=schedule_schema_small ,  format_checker=jsonschema.FormatChecker() )
                 
-                self.initializeFromDict(mydict)
+                self._initializeFromDict(mydict)
             
             except KeyError as ke:
                 msg = "required param {} not present {}".format(ke,kwargs.keys())
@@ -219,6 +234,10 @@ class Station:
 
     
     def save(self,client,override_doublesave=False):
+        """submits the station to OSCAR using the client object passed in via `client`
+        This method allows to get around a bug in OSCAR todo with incorrect gml:id, as this method first saves the originally downloaded XML back to OSCAR,
+        therefore setting the gml:id and then re-submits the modified XML.
+        """
         self.validate(original= (not override_doublesave))
         # need to first save the original XML to make sure the gml:id are set
         if not override_doublesave:
@@ -228,7 +247,7 @@ class Station:
                 # f.write(original_xml)
             
             status = client.uploadXML( original_xml )
-            logger.info("uploaded original XML to set gml:id. Status: {}".format(status))
+            logger.debug("uploaded original XML to set gml:id. Status: {}".format(status))
         
             if not status in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
                 raise Exception("error saving original XML ({})".format(status))
@@ -242,13 +261,17 @@ class Station:
         if not status in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
             raise Exception("error saving updated XML ({})".format(status))
 
-        logger.info("uploaded updated XML. Status: {}".format(status))
+        logger.debug("uploaded updated XML. Status: {}".format(status))
      
     def fix_and_update_datageneration(self,gid,defaultSchedule):
+        """repairs the datageneration referenced by the gml:id `gid` using the schedule information passed in `defaultSchedule`
+        additionally, the datageneration element is updated with the information passed in via `defaultSchedule`
+        """
         self.fix_datageneration(gid,defaultSchedule)
         self.update_schedule(gid,defaultSchedule,override=True)
     
     def fix_datageneration(self,gid,defaultSchedule):
+        """repairs the datageneration referenced by the gml:id `gid` using the schedule information passed in `defaultSchedule` """
         return Station.__fix_datageneration(self.xml_root,gid,defaultSchedule)
     
     def __fix_datageneration(xml_root,gid,defaultSchedule):
@@ -287,6 +310,10 @@ class Station:
         
     
     def fix_deployments(self,mode="update",defaultSchedule=None):
+        """repairs the corrupted deployments downloaded from OSCAR/Surface according to known issues with the XML export in some stations.
+        In `mode` : update the schedule and datageneration object is complemtend with the information passed in `defaultSchedule`.
+        In `mode` : delete the corrupted datageneration elements from the station
+        """
     
         if self.syntax_error:
             raise Exception("invalid XML")
@@ -302,7 +329,7 @@ class Station:
         
         try:
             xmlschema.assertValid(self.xml_root)
-            logger.info("XML schema sucessfully fixed. Schema valid.")
+            logger.debug("XML schema sucessfully fixed. Schema valid.")
             self.has_been_fixed=True
             self.invalid_schema=False
             return True
@@ -391,6 +418,7 @@ class Station:
             
             
     def schedules(self): 
+        """extracts the schedules of the station and returns them grouped by variable"""
         result_tree  = transform_schedules(self.xml_root)
         
         def convert_types(path,key,value):
@@ -419,6 +447,7 @@ class Station:
         
         
     def current_schedules(self,variables=None):
+        """returns the ongoing schedules grouped by variable. Can filter by list of `variables`"""
         
         observations = self.schedules()
         
@@ -436,7 +465,9 @@ class Station:
         return observations
         
     def current_schedules_by_var(self,var_id):
-        schedules = self.schedules()
+        """returns the ongoing schedules corresponding to the variable `var_id` grouped by variable"""
+        
+        schedules = self.current_schedules()
         codelistid = "http://codes.wmo.int/wmdr/{}".format(var_id)
         
         observation = None
@@ -446,9 +477,10 @@ class Station:
                 
         return observation
         
-        #last_date = None
-        
     def get_wigos_ids(self,primary=True):
+        """returns the WIGOS ID of a station
+        Currently only returns one WIGOS ID, as WMDR does not support multiple WIGOS IDs
+        """
         xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier'
         wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
         
@@ -457,11 +489,25 @@ class Station:
             
         return [ str(wigosid_elem[0].text) , ]
 
+
+    def add_existing_contact(self,email):
+        """adds a station contact to the station. 
+        The station contact must already exits in OSCAR and is referenced by it's email address
+        """
+        
+        if not email:
+            raise Exception("need to provide email address")
+            
+       
+        self.xml_root = transform_insertcontact(self.xml_root, email= etree.XSLT.strparam(email) )
+        
+
     
     def update_schedule(self,gid,schedule,override=False):
+        """updates the schedule indicated by `gid` with the `schedule` element"""
     
         if self.invalid_schema and not override:
-            raise ValidationError("schema invalid. Fix schema by running fix_deployments first or use override=True")
+            raise Exception("schema invalid. Fix schema by running fix_deployments first or use override=True")
             
         try:
             validate( instance=schedule , schema=schedule_schema ,  format_checker=jsonschema.FormatChecker() )
@@ -505,10 +551,18 @@ class Station:
     def __str__(self):
         return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding="unicode")
         
-    def toSimpleXML(self):
-        return self.simplexml
+    def simple_xml(self):
+        """returns the simplified XML represtnations of the station
+        The method only works if the station object has been initialized via JSON, parameters or simplifieed XML (and not when initialized by WMDR)
+        """
+        if self.simplexml:
+            return self.simplexml
+        else:
+            return None
         
     def validate(self,original=False):
+        """Validates the station against the WMDR schema"""
+        
         xmlschema.assertValid(self.xml_root)
         if original:
             try:

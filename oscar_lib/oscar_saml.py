@@ -8,17 +8,35 @@ import re
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)            
+__pdoc__ = {} 
 
 QLACK_TOKEN_NAME = "X-Qlack-Fuse-IDM-Token-GO"
 USER_DETAILS_URL = "//rest/api/security-proxy/user-details"
 LOGOUT_URL = "//auth?logout"
 
 class OscarSaml(object):
-    
-    def __init__(self,**kwargs):
-        self.oscar_url = kwargs.get('oscarurl')
-        
 
+    # do not document deprecated methods
+    __pdoc__["OscarSaml.performLogin"] = False
+    __pdoc__["OscarSaml.performLogout"] = False
+    __pdoc__["OscarSaml.getUserCredentials"] = False
+    
+    def __init__(self,oscar_url=None,username=None,password=None):
+        """Logon to the OSCAR eIAM using `username` and `password` 
+        """    
+        
+        if not (oscar_url and username and password):
+            raise ValueError("supply url, username and password")
+        
+        self.oscar_url = oscar_url
+        info = self._login(username,password)
+        
+        if info:
+            self.qlack_token = info["token"]
+            self.cookies = info["cookies"]
+        else:
+            raise Exception("could not login {}".format(info))
+        
 
     def __parseTicket(self,tokenstring):
         tmp = re.sub(r'(?<={|,)([a-zA-Z][a-zA-Z0-9]*)(?=:)', r'"\1"', tokenstring.strip('"'))
@@ -69,6 +87,8 @@ class OscarSaml(object):
         
         headers = {"Accept-Language": "en-US,en;"}
         
+        log.debug("going to url {}".format(url))
+        
         if mode=="POST":
             r = session.post(url,data=params,headers=headers)
         elif mode=="GET":
@@ -92,27 +112,32 @@ class OscarSaml(object):
             soup = BeautifulSoup(html_doc, 'html.parser')
             element = soup.find('span', {"class":"iconDialogError"})
             if element:
-                log.info("BIT Login failed: {}".format(element.string))
+                log.warning("BIT Login failed: {}".format(element.string))
                 raise Exception("login into BIT failed")
             else:
-                log.info("BIT login ok..")
+                log.debug("BIT login ok..")
+                
+        #print(html_doc)
 
         
         [params,actionurl] = self.__parseFormInputs(html_doc,url)  
+        #log.info("returning {} and {}".format(params,actionurl))
 
         return [params,actionurl]
 
-    def performLogout(self,cookies,qlack_token):
+    
+    
+    def logout(self):
+        """Performs a logout from OSCAR"""
 
         log.info("logging out")
     
         headers = {'Content-type':'application/json;charset=utf-8'}           
         headers = {'Accept': 'application/json' , }
-        headers[QLACK_TOKEN_NAME]  =  "{"+qlack_token+"}" 
-        r = requests.get(self.oscar_url+LOGOUT_URL , headers=headers ,  cookies=cookies )
+        headers[QLACK_TOKEN_NAME]  =  "{"+self.qlack_token+"}" 
+        r = requests.get(self.oscar_url+LOGOUT_URL , headers=headers ,  cookies=self.cookies )
         
         log.info("response {}".format(r))
-
 
         if r.status_code == 200:
             return True
@@ -120,21 +145,33 @@ class OscarSaml(object):
             return False
         
         
-    def getUserCredentials(self,cookies,qlack_token):
+
+        
+    def user_credentials(self,oscar_cookies = None, qlack_token = None):
+        """obtains user credentials from OSCAR"""
+        
+        if (not oscar_cookies and not self.cookies) or (not qlack_token and not self.qlack_token):
+            raise ValueError("need to eigther be logged in, or pass cookies and token as parameters")
+            
+        if not oscar_cookies:
+            oscar_cookies = self.cookies
+        if not qlack_token:
+            qlack_token = self.qlack_token
         
         headers = {'Content-type':'application/json;charset=utf-8'}           
         headers = {'Accept': 'application/json' , }
         headers[QLACK_TOKEN_NAME]  =  "{"+qlack_token+"}" 
         
-        r = requests.get(self.oscar_url+USER_DETAILS_URL , headers=headers ,  cookies=cookies )
+        r = requests.get(self.oscar_url+USER_DETAILS_URL , headers=headers ,  cookies=oscar_cookies )
 
         if r.status_code == 200:
             login_data = json.loads(r.content)
             return login_data
         else:
             return False
-        
-    def performLogin(self,username,password):    
+    
+    
+    def _login(self,username,password):    
 
         try:        
             log.debug("step 1: oscar login button")
@@ -146,8 +183,16 @@ class OscarSaml(object):
             bitSession = requests.Session()
             [params2,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params,"sending SAML token to BIT")
 
+            params["HomeRealmSelection"] = "urn:eiam.admin.ch:idp:e-id:CH-LOGIN"
+            
+            log.debug("step 2.1: BIT redirect")
+            bitSession = requests.Session()
+            [params21,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params,"BIT redirect")
+            
+            #sys.exit(1)
+
             log.debug("step 3: contacting IDP")
-            [params3,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params2,"SSO at BIT")
+            [params3,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params21,"SSO at BIT")
             
             #prepare for login
             params3['isiwebuserid']=username
@@ -188,7 +233,7 @@ class OscarSaml(object):
                 
             # test if we are logged in.
 
-            login_data = self.getUserCredentials(oscar_cookies , qlack_token)
+            login_data = self.user_credentials(oscar_cookies , qlack_token)
 
             # "username":"72119686-3962-4bc2-8652-59af15ba20bd"
             username_token = ticket["username"] 
@@ -200,9 +245,10 @@ class OscarSaml(object):
                 log.debug("sucesfully logged on {}, session info {}".format(username_token,ret))
                 return ret
             else:
-                log.debug(" logged for {} {} unsucessfull".format(username_token,username_data))
+                log.warning(" logged for {} {} unsucessfull".format(username_token,username_data))
                 return False
                 
         except Exception as e:
             log.warning("login problem.. {}".format(e))
             return False
+

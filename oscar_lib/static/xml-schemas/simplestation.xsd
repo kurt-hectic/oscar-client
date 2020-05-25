@@ -24,7 +24,7 @@
 	<xs:element name="urls">
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element name="url" type="xs:anyURI" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="url" type="xs:anyURI" minOccurs="1" maxOccurs="unbounded" />
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
