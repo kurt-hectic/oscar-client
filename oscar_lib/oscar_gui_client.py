@@ -4,8 +4,6 @@ import os
 import requests
 import json
 import datetime
-from jsonpath_ng import jsonpath
-from jsonpath_ng.ext import parse
 import logging
 from .oscar_saml import OscarSaml
 from .oscar_client import OscarClient
@@ -142,7 +140,7 @@ class OscarGUIClient(object):
             if not valid_since:
                 valid_since = datetime.date.today().strftime("%Y-%m-%d")
             else:
-                valid_since = datetime.datetime.strptime(valid_since,"%Y-%m-%d").strftime("%Y-%m-%d")
+                valid_since = datetime.datetime.strptime(str(valid_since),"%Y-%m-%d").strftime("%Y-%m-%d")
             
             updated_station["timezones"].append( 
                 {"validSince":valid_since,"timezoneId":timezone_id,"usedTimezones":None,"timezoneName":timezone} ) 

@@ -73,7 +73,7 @@ class DTDResolver(etree.Resolver):
         return self.resolve_filename( filename, context )
 
 
-logger.info("loading schema files")
+logger.debug("loading schema files")
 # open and read schema file
 with open(mydir+"/xml-schemas/wmdr_RC9.xsd", 'r') as schema_file:
     schema_to_check = schema_file
@@ -83,7 +83,7 @@ with open(mydir+"/xml-schemas/wmdr_RC9.xsd", 'r') as schema_file:
 
     xmlschema_doc = etree.parse(schema_to_check,parser)
     xmlschema = etree.XMLSchema(xmlschema_doc)
-    logger.info("schema parsed sucessfully")
+    logger.debug("schema parsed sucessfully")
 
 # open and read schema file for simple station type    
 with open(mydir+"/xml-schemas/simplestation.xsd", 'r') as schema_file:
@@ -94,23 +94,33 @@ with open(mydir+"/xml-schemas/simplestation.xsd", 'r') as schema_file:
 
     xmlschema_doc_simple = etree.parse(schema_to_check,parser)
     xmlschema_simple = etree.XMLSchema(xmlschema_doc_simple)
-    logger.info("schema parsed sucessfully")
+    logger.debug("schema parsed sucessfully")
     
 
-logger.info("loading XSLT files")
+logger.debug("loading XSLT files")
 # open and read schema file
 with open(mydir+"/xslts/wmdr2schedule.xsl", 'r') as xslt_file:
     xslt_root  = etree.parse(xslt_file)
     transform_schedules = etree.XSLT(xslt_root)
 
-    logger.info("XSLT parsed sucessfully")
+    logger.debug("XSLT parsed sucessfully")
+
+# open and read schema file
+with open(mydir+"/xslts/insert_contact.xsl", 'r') as xslt_file:
+    xslt_root  = etree.parse(xslt_file)
+    transform_insertcontact = etree.XSLT(xslt_root)
+
+    logger.debug("XSLT parsed sucessfully")
+
 
 # open and read schema file
 with open(mydir+"/xslts/simple2wmdr.xsl", 'r') as xslt_file:
     xslt_root  = etree.parse(xslt_file)
     transform_simple = etree.XSLT(xslt_root)
 
-    logger.info("XSLT simple2wmdr parsed sucessfully")
+    logger.debug("XSLT simple2wmdr parsed sucessfully")
+
+
 
 
 class Station:
@@ -177,15 +187,15 @@ class Station:
                 self._initializeFromDict(info)
             except json.decoder.JSONDecodeError: 
                 try:
-                    logger.info("input not JSON.. try XML in WMDR")
+                    logger.debug("input not JSON.. try XML in WMDR")
                     self._initializeFromXML(info)
                 except etree.DocumentInvalid:
-                    logger.info("input not WMDR, trying simple XML")
+                    logger.debug("input not WMDR, trying simple XML")
                     try:
                         self._initializeFromSimpleXML(info)
                     except Exception as e:
                         logger.warning("could not parse XML {}".format(e))
-            logger.info("station initialized")
+            logger.debug("station initialized")
         else: 
             try:
                 params = ['name','wigosid','latitude','longitude','elevation','country','established','region','observations','stationtype','status']
@@ -232,7 +242,7 @@ class Station:
                 # f.write(original_xml)
             
             status = client.uploadXML( original_xml )
-            logger.info("uploaded original XML to set gml:id. Status: {}".format(status))
+            logger.debug("uploaded original XML to set gml:id. Status: {}".format(status))
         
             if not status in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
                 raise Exception("error saving original XML ({})".format(status))
@@ -246,7 +256,7 @@ class Station:
         if not status in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
             raise Exception("error saving updated XML ({})".format(status))
 
-        logger.info("uploaded updated XML. Status: {}".format(status))
+        logger.debug("uploaded updated XML. Status: {}".format(status))
      
     def fix_and_update_datageneration(self,gid,defaultSchedule):
         """repairs the datageneration referenced by the gml:id `gid` using the schedule information passed in `defaultSchedule`
@@ -314,7 +324,7 @@ class Station:
         
         try:
             xmlschema.assertValid(self.xml_root)
-            logger.info("XML schema sucessfully fixed. Schema valid.")
+            logger.debug("XML schema sucessfully fixed. Schema valid.")
             self.has_been_fixed=True
             self.invalid_schema=False
             return True
@@ -473,6 +483,19 @@ class Station:
             raise ValueError("no WIGOS ID element")
             
         return [ str(wigosid_elem[0].text) , ]
+
+
+    def add_existing_contact(self,email):
+        """adds a station contact to the station. 
+        The station contact must already exits in OSCAR and is referenced by it's email address
+        """
+        
+        if not email:
+            raise Exception("need to provide email address")
+            
+       
+        self.xml_root = transform_insertcontact(self.xml_root, email= etree.XSLT.strparam(email) )
+        
 
     
     def update_schedule(self,gid,schedule,override=False):
