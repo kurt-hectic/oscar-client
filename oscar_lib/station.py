@@ -1,4 +1,4 @@
-import os
+import os,sys
 import logging
 from lxml import etree
 from io import BytesIO
@@ -435,7 +435,7 @@ class Station:
                 return key, value
             except (ValueError, TypeError):
                 return key, value
-        
+                
         station = xmltodict.parse(result_tree,postprocessor=convert_types, force_list=('observations','deployments','datagenerations'))
         
         res = {}

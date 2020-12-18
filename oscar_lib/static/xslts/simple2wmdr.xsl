@@ -17,14 +17,14 @@
 					<wmdr:responsibleParty>
 						<wmdr:ResponsibleParty>
 							<wmdr:responsibleParty>
-								<gmd:CI_ResponsibleParty>
+								<gmd:CI_ResponsibleParty id="first_responsible_party">
 									<xsl:if test="station/organization/text()">
 										<gmd:organisationName>
 											<gco:CharacterString><xsl:value-of select="station/organization/text()"/></gco:CharacterString>
 										</gmd:organisationName>
 									</xsl:if>
 									<gmd:role>
-										<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists#CI_RoleCode" codeListValue="pointOfContact"/>
+										<gmd:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/gml/CI_RoleCode.xml/owner" codeListValue="owner"/>
 									</gmd:role>
 								</gmd:CI_ResponsibleParty>
 							</wmdr:responsibleParty>
@@ -149,6 +149,12 @@
 											<wmdr:Process gml:id="proc_{position()}_1">
 												<wmdr:deployment>
 													<wmdr:Deployment gml:id="depl_{position()}_1">
+														<wmdr:deployedEquipment xlink:type="simple">
+															<wmdr:Equipment>
+																<wmdr:observingMethod xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/unknown"/>
+																
+															</wmdr:Equipment>
+														</wmdr:deployedEquipment>
 														<wmdr:dataGeneration>
 															<wmdr:DataGeneration gml:id="dg_{position()}_1">
 																<wmdr:validPeriod>

@@ -55,6 +55,34 @@ class FormalOscarInterface(metaclass=abc.ABCMeta):
     def update_wigosid(self, wigos_ids: dict,  wigos_id: str = None) -> dict:
         """update wigos ids of station identified by _wigos_id, as per informationn in _wigos_ids_"""        
         raise NotImplementedError
+
+
+    @abc.abstractmethod            
+    def update_affiliation(self, wigos_id: str,  affiliation: str = None ,  variables: list = []) -> dict:
+        """updates the station and adds the affiliation as well as linking it to the variables passed in variables. 
+        
+        Parameters:
+        wigos_id (str): the WIGOS identifier of the station that should be updated
+        affiliation (str): the affiliation that should be added to the station
+        variables (list): the variables the affiliation should be linked to
+        
+        Returns:
+        dict: status code (status) and message (message)
+        """     
+        raise NotImplementedError
+        
+    def update_schedule(self, wigos_id: str, schedules: list = []): dict:
+        """updates the schedules at station identified by wigos_id as indicated by schedules. 
+        
+        Parameters:
+        wigos_id (str): the WIGOS identifier of the station that should be updated
+        schedules (list): list of schedules, represented as dict (schedule_schema.json), that should be updated. The gml identifier of a schedule as passed in the parameter is used to match.
+        
+        Returns:
+        dict: status code (status) and message (message)
+        """
+        raise NotImplementedError
+
         
     @abc.abstractmethod        
     def retrieve_wigosids(self, any_ids: list = []) -> list:

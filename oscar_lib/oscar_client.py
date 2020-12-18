@@ -22,6 +22,7 @@ class OscarClient(object):
     _STATION_SEARCH_URL = '//rest/api/search/station?stationClass={stationClass}'
     _STATION_XML_UPLOAD = '//rest/api/wmd/upload'
     _STATION_XML_DOWNLOAD = '//rest/api/wmd/download/'
+    _WIGOS_ID_SEARCH_URL = '//rest/api/stations/identify'
 
     OSCAR_DEFAULT = 'https://oscar.wmo.int/surface'
     """The URL of the production system"""
@@ -38,7 +39,7 @@ class OscarClient(object):
         self.oscar_url = oscar_url if oscar_url else OscarClient.OSCAR_DEFAULT
         self.token = token
         self.session = requests.Session()
-
+        
 
     def upload_XML(self,xml):
         """
@@ -109,6 +110,39 @@ class OscarClient(object):
             return wmdr
         
         
+    def get_wigos_ids(self,search_wigos_ids):
+        """Returns all wigos identifiers of the indicated stations 
+        The return result respects the order of the parameters passed. None indicated that the WIGOS ID was not found in OSCAR
+        """
+    
+        wigosid_search_url = self.oscar_url + OscarClient._WIGOS_ID_SEARCH_URL
+        log.info("searching for {} at {}".format(search_wigos_ids,wigosid_search_url))
+        
+        params={'WIGOSStationIdentifier': ",".join(search_wigos_ids) }       
+        
+        with self.session.get( wigosid_search_url , params=params ) as rsp:
+            if rsp.status_code == 200:
+                wigos_ids = [station['wigosStationIdentifiers'] for station in json.loads(rsp.content)]
+                wigos_ids_concat = [ ",".join([s['wigosStationIdentifier'] for s in wids]) for wids in wigos_ids ]
+
+                result = [None for i in range(len(search_wigos_ids))]
+                for idx,swid in enumerate(search_wigos_ids):
+                    res = [pos for pos,i in enumerate(wigos_ids_concat) if swid in i] 
+                    if len(res)>0:
+                        result[idx]=wigos_ids[res[0]]
+                    else:
+                        result[idx] = None
+                
+                return result 
+
+            else:
+                ret = {}
+                ret["status_code"] = rsp.status_code
+                ret["message"] = str(rsp.content) 
+
+                return ret
+                
+                
     def wigos_to_internal_id(self,wigos_id):
         """Maps the `wigosid` to the internal id of the corresponding station in OSCAR
         Returns the `internal_id` of OSCAR.
