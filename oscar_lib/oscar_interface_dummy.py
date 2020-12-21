@@ -1,4 +1,4 @@
-import os, json
+import os, json, datetime, logging
 
 from jsonschema import validate, FormatChecker
 from jsonschema.exceptions import ValidationError
@@ -10,6 +10,7 @@ from .utils import convert_schedule
 
 mydir = os.path.dirname(__file__) + "/static/"
 
+logger = logging.getLogger(__name__)
 
 with open(mydir+"/json-schemas/create_station.json","r") as f:
     station_schema = json.load( f )
@@ -24,9 +25,39 @@ class OscarInterfaceDummy(FormalOscarInterface):
         """
         if server != "DEPL":
             raise Exception("only DEPL implemented at this stage")
+            
         
         self.client = OscarClient(oscar_url = OscarClient.OSCAR_DEPL, token=token)
+        logger.info("initalized OSCAR client for {}".format(server))   
    
+    def _upload_station(self,new_station):
+        """interal helper function to upload new station"""
+        
+        logger.debug("_upload station")
+    
+        try:
+            new_station.validate() # TODO: need to check for invalid stations (maybe here, maybe in another place)
+
+            status = self.client.upload_XML(str(new_station))
+                    
+            if status == 'AUTH_ERROR':
+                ret = {"status": 403, "message" : "auth error. Check token"}
+                
+            if status == 'SERVER_ERROR':
+                ret =  {"status": 500, "message" : "processing error on server"}
+            
+            if status in ['SUCCESS_WITH_WARNINGS','SUCCESS','VALID_XML_WITH_ERRORS_OR_WARNINGS']:
+                ret =  {"status": 200, "message" : "request processed: {}".format(status) }
+            else:
+                ret =  {"status": 501, "message" : "unknown error ({})".format(status) }
+                
+        except Exception as ex:
+            ret = {"status": 400 , "message": "XML invalid: {}".format(str(ex))}
+ 
+        logger.debug("return {}".format(ret))
+        return ret
+    
+    
     def create_station(self, station: dict, wigos_id: str = None  ) -> dict :
         """create an WDMR record for the information contained in dict and push it to OSCR
         station is a JSON object representing the status with a grammar.
@@ -38,10 +69,13 @@ class OscarInterfaceDummy(FormalOscarInterface):
         Returns:
         dict: status code (status) and message (message)
         """
+        logger.debug("create_station {} ({})".format(wigos_id,station))
         try:
             validate( instance=station , schema=station_schema ,  format_checker=FormatChecker() )
         except ValidationError as ve:
-            raise ValueError("station object not valid {}".format(str(ve)))
+            err_msg = "station object not valid {}".format(str(ve))
+            logger.error(err_msg)
+            raise ValueError(err_msg)
             
         schedule = convert_schedule(station["internationalReportingFrequency"])
         schedule["international"] = station["international"]
@@ -87,25 +121,42 @@ class OscarInterfaceDummy(FormalOscarInterface):
 
         new_station = Station(**station_params)
         
-        new_station.validate()
-
-        status = self.client.upload_XML(str(new_station))
-                
-        if status == 'AUTH_ERROR':
-            return {"status": 403, "message" : "auth error. Check token"}
-            
-        if status == 'SERVER_ERROR':
-            return {"status": 500, "message" : "processing error on server"}
+        ret = self._upload_station(new_station)
         
-        if status in ['SUCCESS_WITH_WARNINGS','SUCCESS','VALID_XML_WITH_ERRORS_OR_WARNINGS']:
-            return {"status": 200, "message" : "request processed: {}".format(status) }
-            
-        return {"status": 501, "message" : "unknown error ({})".format(status) }
+        logger.info("created new station: status: {}".format(ret["status"]))
+       
+        return ret
                         
-    def update_wigosid(self, wigos_ids: dict,  wigos_id: str = None) -> dict:
-        """update wigos ids of station identified by _wigos_id, as per information in _wigos_ids_"""        
-        return {"status": 200, "message" : "I did nothing"}
-        
+    def update_wigosid(self, wigos_id: str = None , wigos_ids: dict = [] ) -> dict:
+        """update wigos ids of station identified by wigos_id, as per information in wigos_ids""" 
+        logger.debug("update_wigosid station:{},  wigos_ids: ({})".format(wigos_id,wigos_ids))
+
+        try: 
+            station=Station(self.client.load_station(wigos_id=wigos_id,cache=True))
+            
+            
+            new_wigos_ids = [ wigos_ids['primaryWigosID'] , ]
+            for wid in ['wigosID2','wigosID3','wigosID4']:
+                if wid in wigos_ids.keys() and wigos_ids[wid]:
+                    new_wigos_ids.append(wigos_ids[wid])
+            
+            
+            station.update_wigosids(wigos_ids=new_wigos_ids) 
+            ret=self._upload_station(station)
+            
+            
+            if ret["status"] == 200 :
+                ret = {"status": 200, "message" :  ret["message"] + " " +  "OK. new wigos ids {}".format(",".join(ret))}
+            else:
+                ret
+                
+        except KeyError as ke:
+                message = "error: station {} does not exist {}".format(wigos_id,str(ke))
+                ret = {"status": 400, "message" :  message }
+                logger.error(message)
+
+        logger.info("updated wigos ids: status: {} {}".format(ret["status"],ret["message"]))
+        return ret
         
     def retrieve_wigosids(self, any_ids: list = []) -> dict:
         """retrieve information about current WIGOS IDs of stations passed as argument
@@ -117,6 +168,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         dict: Dict of dict containing primary and secondary WIGOS Identifiers. Key of the first dict is the any_id used in the request. The second level dict is encoded according to the JSON grammar specified for WIGOS IDs of a station.
         
         """
+        logger.debug("retrieve_wigosids {}".format(any_ids))
         
         wigos_ids = self.client.get_wigos_ids(any_ids)       
         
@@ -136,6 +188,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
                 
                 result[search_wid] = { "primaryWigosID": primary , "wigosID2" : rest[0], "wigosID3" : rest[1] , "wigosID4" : rest[2] , "all" : [primary,] + [r for r in rest if r] } 
              
+        logger.info("retrieve_wigosids {}".format(result))
         return  result
         
         
@@ -151,6 +204,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         list: List of dict containing individual schedules. Note that the result likely contains more schedules than number of stations passed as argument
 
         """
+        logger.debug("retrieve_schedules for station {}, variable: {}".format(wigos_ids,var_id))
         
         schedules = {}
         
@@ -172,11 +226,59 @@ class OscarInterfaceDummy(FormalOscarInterface):
                     
                         ret.append(new_schedule)
                     
-    
+        logger.info("retrieve_schedules {}".format(ret))
         return ret
-        return [ {"wigosID":"0-20000-2-123456", "variable" : 16 , 
-            "deployment_id" : "id_47312301-88df-44e8-a05d-f7423f17ad95" , "deployment_name" : "some deployment" ,
-            "schedule_id" : "id_37b9eb94-869c-4c4d-8fbd-d7e112fbb418", "schedule_name" : "some schedule", "schedule" : "Jan-Jun/Mon-Fri/14-18/11-23/00-59:3600" , "international" : True, "near-real-time" : True,
-            "date_from" : "2020-12-01", "status" : "operational"
-            },  ]
+        #return [ {"wigosID":"0-20000-2-123456", "variable" : 16 , 
+        #    "deployment_id" : "id_47312301-88df-44e8-a05d-f7423f17ad95" , "deployment_name" : "some deployment" ,
+        #    "schedule_id" : "id_37b9eb94-869c-4c4d-8fbd-d7e112fbb418", "schedule_name" : "some schedule", "schedule" : "Jan-Jun/Mon-Fri/14-18/11-23/00-59:3600" , "international" : True, "near-real-time" : True,
+        #    "date_from" : "2020-12-01", "status" : "operational"
+        #    },  ]
     
+    
+    def update_affiliation(self, wigos_id: str,  affiliation: str = None ,  variables: list = [], operational_status: str = 'operational' , program_id: str = None ) -> dict:
+        """updates the station and adds the affiliation as well as linking it to the variables passed in variables. 
+        
+        Parameters:
+        wigos_id (str): the WIGOS identifier of the station that should be updated
+        affiliation (str): the affiliation that should be added to the station
+        variables (list): the variables the affiliation should be linked to
+        operational_status (str): the status of the affiliation (default: operational)
+        program_id (str): the programme specific ID of the affiliation (default: None)
+        
+        Returns:
+        dict: status code (status) and message (message)
+        """ 
+        logger.debug("update_affiliation station: {}, affiliation: {}, variables: {}, status: {}, id: {}".format(wigos_id,affiliation,variables,operational_status,program_id))
+  
+        try:
+            station = Station(self.client.load_station(wigos_id=wigos_id, cache=True))
+            
+            station.update_affiliations(affiliation=affiliation,variables=variables,operational_status=operational_status,begin_date=datetime.datetime.now())
+           
+            print(str(station))
+           
+            ret=self._upload_station(station)
+            
+            if ret["status"] == 200 :
+                ret = {"status": 200, "message" :  ret["message"] + " " +  "added affiliation {} to {}".format(affiliation,variables)}
+            else:
+                msg
+        except KeyError as ke:
+                message = "error: station {} does not exist {}".format(wigos_id,str(ke))
+                ret = {"status": 400, "message" :  message }
+                logger.error(message)
+        
+        logger.info("updated affiliations: status: {}, {}".format(ret["status"],ret["message"]))
+        return ret
+       
+    def update_schedule(self, wigos_id: str, schedules: list = []) -> dict:
+        """updates the schedules at station identified by wigos_id as indicated by schedules. 
+        
+        Parameters:
+        wigos_id (str): the WIGOS identifier of the station that should be updated
+        schedules (list): list of schedules, represented as dict (schedule_schema.json), that should be updated. The gml identifier of a schedule as passed in the parameter is used to match.
+        
+        Returns:
+        dict: status code (status) and message (message)
+        """
+        pass

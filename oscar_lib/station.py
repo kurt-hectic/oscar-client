@@ -1,16 +1,19 @@
-import os,sys
+import os
+import sys
 import logging
+import uuid 
+import jsonschema
+import json
+import xmltodict
+
+from dicttoxml import dicttoxml
 from lxml import etree
 from io import BytesIO
 from jsonschema import validate
 from copy import deepcopy
-import jsonschema
-import json
-import xmltodict
-from dicttoxml import dicttoxml
 
-logging.getLogger(__name__).addHandler(logging.NullHandler())
-logger = logging.getLogger()
+#logging.getLogger(__name__).addHandler(logging.NullHandler())
+logger = logging.getLogger(__name__)
 logging.getLogger("dicttoxml").setLevel(logging.WARNING)
 
 
@@ -20,7 +23,8 @@ namespaces = {
     'wmdr':'http://def.wmo.int/wmdr/2017',
     'gml' : 'http://www.opengis.net/gml/3.2',        
     'xlink' : 'http://www.w3.org/1999/xlink',
-    'xsi' : 'http://www.w3.org/2001/XMLSchema-instance'
+    'xsi' : 'http://www.w3.org/2001/XMLSchema-instance',
+    'om' : 'http://www.opengis.net/om/2.0'
 }
 
 internalDefaultSchedule = { 
@@ -53,6 +57,29 @@ def makeXMLSchedule(schedule):
     </wmdr:Schedule>
     """.format(**schedule)
     
+    return etree.fromstring(tmpl)
+
+def makeAffiliation(affiliation,status,begin_date):
+
+    tmpl = """
+        <wmdr:programAffiliation xmlns:wmdr="http://def.wmo.int/wmdr/2017" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gml="http://www.opengis.net/gml/3.2">
+            <wmdr:ProgramAffiliation>
+                <wmdr:programAffiliation xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/ProgramAffiliation/{affiliation}"/>
+                <wmdr:reportingStatus>
+                    <wmdr:ReportingStatus>
+                        <wmdr:reportingStatus xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/ReportingStatus/{status}"/>
+                        <wmdr:validPeriod xlink:type="simple">
+                            <gml:TimePeriod gml:id="id_{gml_id}">
+                                <gml:beginPosition>{begin_date:%Y-%m-%d}</gml:beginPosition>
+                                <gml:endPosition/>
+                            </gml:TimePeriod>
+                        </wmdr:validPeriod>
+                    </wmdr:ReportingStatus>
+            </wmdr:reportingStatus>
+            </wmdr:ProgramAffiliation>
+        </wmdr:programAffiliation>
+    """.format(affiliation=affiliation,status=status,begin_date=begin_date,gml_id=str(uuid.uuid1().int))
+
     return etree.fromstring(tmpl)
 
 
@@ -181,7 +208,7 @@ class Station:
     
     def __init__(self,*args, **kwargs):
         """initializes a Station object. The object can be initialized by passing a WMRD record as string, a string encoded JSON representation, a simplified XML representation or using keyword parameters."""
-        logging.debug("init")
+        logger.debug("initializing station")
         self.simplexml=None
         
         if len(args) == 1 and len(kwargs) == 0:
@@ -416,7 +443,51 @@ class Station:
             # with open("test_out.xml","wb") as f:
                 # f.write( etree.tostring(xml_root,  pretty_print=True, xml_declaration=True))
             
+    def update_affiliations(self,affiliation: str = None ,  variables: list = [], operational_status = 'operational', program_id = None , begin_date = None ):        
+    
+        logger.debug("update_affiliations: affiliation: {}, vars: {}, status: {}, id: {}, date:{} ".format(affiliation,variables,operational_status,program_id,begin_date))
+    
+        if not affiliation in self.affiliations(): # need to add new affiliation element
+            affiliation_element = self.xml_root.xpath('/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:programAffiliation',namespaces=namespaces)[0]
             
+            if len(affiliation_element)==0:
+                raise Exception("could not find existing affiliation to append to.. XML should already have at least one affiliation")
+
+            affiliation_element.addnext( makeAffiliation(affiliation,operational_status,begin_date) )
+    
+        # now add the affiliations under the observations
+        for var in variables:
+            xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[@xlink:href='http://codes.wmo.int/wmdr/ObservedVariableAtmosphere/{}']]/wmdr:programAffiliation".format(var)
+            
+            observation_affiliations = self.xml_root.xpath(xpath,namespaces=namespaces)
+            
+            if len(observation_affiliations)==0:
+                logging.info("no observation for variable {}, skipping".format(var))
+                continue
+                        
+            existing_affiliations = [elem.get("{http://www.w3.org/1999/xlink}href").split('/')[-1] for elem in observation_affiliations]
+            
+            if not affiliation in existing_affiliations:
+                # need to get the wmdr:/programAffiliation element. The xpath before selected the 
+                observation_affiliations[-1].addnext( etree.fromstring("""
+                    <wmdr:programAffiliation  
+                        xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:wmdr="http://def.wmo.int/wmdr/2017"
+                        xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/{}"/>""".format(affiliation)
+                ))
+        
+    
+    
+    def affiliations(self):
+        """extract the affiliations of the station"""
+        
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:programAffiliation/wmdr:ProgramAffiliation/wmdr:programAffiliation/@xlink:href'
+
+        affiliation_elements = self.xml_root.xpath(xpath , namespaces=namespaces)
+        ret = [str(elem).split('/')[-1] for elem in affiliation_elements]
+
+        return ret
+
+
     def schedules(self): 
         """extracts the schedules of the station and returns them grouped by variable"""
         result_tree  = transform_schedules(self.xml_root)
@@ -478,16 +549,15 @@ class Station:
         return observation
         
     def get_wigos_ids(self,primary=True):
-        """returns the WIGOS ID of a station
-        Currently only returns one WIGOS ID, as WMDR does not support multiple WIGOS IDs
-        """
+        """returns the WIGOS IDs of a station"""
+        
         xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier'
         wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
         
         if not wigosid_elem:
             raise ValueError("no WIGOS ID element")
             
-        return [ str(wigosid_elem[0].text) , ]
+        return (wigosid_elem[0].text).split(",") 
 
 
     def add_existing_contact(self,email):
@@ -502,6 +572,38 @@ class Station:
         self.xml_root = transform_insertcontact(self.xml_root, email= etree.XSLT.strparam(email) )
         
 
+    def update_wigosids(self,wigos_ids=[]):
+        """updates the stations adding the wigos ids passed as parameters. The first wigos id passed will be set a primary. Existing wigos identifiers will be kept, since the OSCAR data model does not allow to remove wigos ids.
+        
+        Parameters:
+        wigos_id (list): the list of WIGOS identifiers to add
+        
+        Returns:
+        list: ordered list of new wigos identifiers
+        """
+        
+        if len(wigos_ids) == 0 or not isinstance(wigos_ids,list):
+            return False
+
+        primary_wigos_id = wigos_ids.pop(0)
+        existing_wigos_ids = list(set(self.get_wigos_ids()))
+        other_wigos_ids = list(set(existing_wigos_ids + wigos_ids)) # get unique list of identifiers. not ordered
+        
+        if primary_wigos_id in other_wigos_ids:
+            other_wigos_ids.remove(primary_wigos_id)
+        
+        new_wigos_ids = [primary_wigos_id,] + other_wigos_ids
+        
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier'
+        wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not wigosid_elem:
+            raise ValueError("no WIGOS ID element")
+        
+        wigosid_elem[0].text = ",".join(new_wigos_ids)
+        
+        return new_wigos_ids
+    
     
     def update_schedule(self,gid,schedule,override=False):
         """updates the schedule indicated by `gid` with the `schedule` element"""
@@ -568,5 +670,5 @@ class Station:
             try:
                 xmlschema.assertValid(self.original_xml)
             except etree.DocumentInvalid as err:
-                raise Exception("original XML not valid")
+                raise Exception("original XML not valid ({})".format(str(err)))
         

@@ -1,7 +1,12 @@
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("dicttoxml").setLevel(logging.WARNING)
+logging.getLogger("oscar_lib.station").setLevel(logging.DEBUG)
+
 from oscar_lib import OscarInterfaceDummy
 
 # instantiate interface
-oscar = OscarInterfaceDummy(server="DEPL",token="68a1e82f-7c4f-49c8-ad3d-4912dc8cfeee")
+oscar = OscarInterfaceDummy(server="DEPL",token="dd2108de-6483-4422-8b8f-9d2e78edae53")
 
 # check token
 #print(OscarInterfaceDummy.validate_token(server="DEPL",token="68a1e82f-7c4f-49c8-ad3d-4912dc8cfeee"))
@@ -30,6 +35,7 @@ new_station = {
     "region" : "southWestPacific",
     "description" : "a nice station",
 }
+
 #print(oscar.create_station(station=new_station,wigos_id=new_station["wigosID"]))
 
 # retrieve wigos ids
@@ -37,4 +43,8 @@ new_station = {
 
 # retrieve schedules
 
-print(oscar.retrieve_schedules(["0-20000-0-06610","0-20000-0-40875"]))
+#print(oscar.retrieve_schedules(["0-20000-0-06610","0-20000-0-40875"]))
+
+print(oscar.update_wigosid(wigos_id=new_station["wigosID"]+"xxx", wigos_ids={'primaryWigosID':'0-356-20-3610256932584799', 'wigosID2':'0-356-20-3610256932584797'} ))
+
+#oscar.update_affiliation(wigos_id="0-20000-0-10961xxx",affiliation="ANTON",variables=[57,179,227],operational_status="operational",program_id=None)

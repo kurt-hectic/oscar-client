@@ -58,7 +58,7 @@ class FormalOscarInterface(metaclass=abc.ABCMeta):
 
 
     @abc.abstractmethod            
-    def update_affiliation(self, wigos_id: str,  affiliation: str = None ,  variables: list = []) -> dict:
+    def update_affiliation(self, wigos_id: str,  affiliation: str = None ,  variables: list = [], operational_status: str = 'operational' , program_id: str = None ) -> dict:
         """updates the station and adds the affiliation as well as linking it to the variables passed in variables. 
         
         Parameters:
@@ -70,8 +70,9 @@ class FormalOscarInterface(metaclass=abc.ABCMeta):
         dict: status code (status) and message (message)
         """     
         raise NotImplementedError
-        
-    def update_schedule(self, wigos_id: str, schedules: list = []): dict:
+
+    @abc.abstractmethod            
+    def update_schedule(self, wigos_id: str, schedules: list = []) -> dict:
         """updates the schedules at station identified by wigos_id as indicated by schedules. 
         
         Parameters:
