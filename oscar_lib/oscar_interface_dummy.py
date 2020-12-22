@@ -6,7 +6,7 @@ from jsonschema.exceptions import ValidationError
 from .oscar_interface import FormalOscarInterface
 from . import OscarClient, Station
 
-from .utils import convert_schedule
+from .utils import convert_schedule, convert_schedule_rev
 
 mydir = os.path.dirname(__file__) + "/static/"
 
@@ -75,7 +75,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         except ValidationError as ve:
             err_msg = "station object not valid {}".format(str(ve))
             logger.error(err_msg)
-            raise ValueError(err_msg)
+            return {"status":400,"message":"invalid format {}".format(err_msg) }
             
         schedule = convert_schedule(station["internationalReportingFrequency"])
         schedule["international"] = station["international"]
@@ -219,10 +219,11 @@ class OscarInterfaceDummy(FormalOscarInterface):
             for var_id,observation in station.items():
                 for deployment in observation["deployments"]:
                     for dg in deployment["datagenerations"]:
-                        schedule = dg["schedule"]
+                        schedule = convert_schedule_rev(dg["schedule"])
+                        
                         
                         new_schedule = {"wigosID": wigos_id, "variable" : var_id, "deployment_id" : deployment["gid"] , "deployment_name" : "{from}-{to}".format(**deployment) ,
-            "schedule_id" : dg["gid"], "schedule_name" : "{from}-{to}".format(**schedule), "schedule" : "{startMonth}-{endMonth}/{startWeekday}-{endWeekday}/{startHour}-{endHour}/{startMinute}-{endMinute}:{interval}".format(**schedule) , "international" : dg["schedule"]["international"], "near-real-time" : True, "date_from" :  schedule["from"] , "status" : "operational" }
+            "schedule_id" : dg["gid"], "schedule_name" : "{from}-{to}".format(**schedule), "schedule" : "{startMonth}-{endMonth}/{startWeekday}-{endWeekday}/{startHour}:{startMinute}-{endHour}:{endMinute}/{interval}".format(**schedule) , "international" : dg["schedule"]["international"], "near-real-time" : True, "date_from" :  schedule["from"] , "status" : "operational" } if schedule else None
                     
                         ret.append(new_schedule)
                     

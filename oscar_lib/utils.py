@@ -8,9 +8,28 @@ logger = logging.getLogger()
 month_map = { "JAN":1, "FEB":2, "MAR":3, "APR":4, "MAR":5, "JUN":6, "JUL":7, "AUG":8, "SEP":9, "OCT":10, "NOV":11, "DEC":12  }
 weekday_map = { "MON":1, "TUE":2, "WED":3, "THU":4, "FRI":5, "SAT":6, "SUN":7 }
 
+month_map_rev = {v: k.capitalize() for k, v in month_map.items()}
+weekday_map_rev = {v: k.capitalize() for k, v in weekday_map.items()}
+
+def convert_schedule_rev(schedule):
+
+    logger.debug("convert_schedule_rev: {}".format(schedule))
+
+    for elem in ["startMonth","endMonth","startWeekday","endWeekday"]:
+        schedule[elem] = month_map_rev[schedule[elem]] if schedule[elem] else None
+    
+    
+    empty=True
+    for k,v in schedule.items():
+        empty = empty and (v==None or v==False)
+    
+    
+    return None if empty else schedule
+
+
 def convert_schedule(new_schedule):
 
-    p = re.compile( r"^(?P<startMonth>\w{3})-(?P<endMonth>\w{3})\/(?P<startWeekday>\w{3})-(?P<endWeekday>\w{3})\/(?P<startHour>\d{1,2})-(?P<endHour>\d{1,2})\/(?P<startMinute>\d{1,2})-(?P<endMinute>\d{1,2}):(?P<interval>\d+)$")
+    p = re.compile( r"^(?P<startMonth>\w{3})-(?P<endMonth>\w{3})\/(?P<startWeekday>\w{3})-(?P<endWeekday>\w{3})\/(?P<startHour>\d{1,2}):(?P<startMinute>\d{1,2})-(?P<endHour>\d{1,2}):(?P<endMinute>\d{1,2})\/(?P<interval>\d+)$")
 
     m = p.search(new_schedule)
     

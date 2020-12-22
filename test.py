@@ -25,7 +25,7 @@ new_station = {
     "realTime": True,
     "affiliations": "GOS, GUAN",
     #"observationsFrequency": "Jan-Jun/Mon-Fri/14-18/00-59:3600",
-    "internationalReportingFrequency": "Jan-Jun/Mon-Fri/14-18/00-59:3600",
+    "internationalReportingFrequency": "Jan-Jun/Mon-Fri/14:00-18:59/3600",
     "country": "IND",
     "utc": "UTC-06:00",
     "wigosID": "0-356-20-3610256932584798",
@@ -36,14 +36,14 @@ new_station = {
     "description" : "a nice station",
 }
 
-print(oscar.create_station(station=new_station,wigos_id=new_station["wigosID"]))
+#print(oscar.create_station(station=new_station,wigos_id=new_station["wigosID"]))
 
 # retrieve wigos ids
-#print(oscar.retrieve_wigosids(["0-20000-1-123456","0-104-6-4807100","0-20000-0-01007"]))
+print("wigos_ids:",oscar.retrieve_wigosids(["0-20000-1-123456","0-104-6-4807100","0-20000-0-01007"]))
 
 # retrieve schedules
 
-#print(oscar.retrieve_schedules(["0-20000-0-06610","0-20000-0-40875"]))
+print("schedules:",oscar.retrieve_schedules(["0-20000-0-06610","0-20000-0-40875"]))
 
 #print(oscar.update_wigosid(wigos_id=new_station["wigosID"]+"xxx", wigos_ids={'primaryWigosID':'0-356-20-3610256932584799', 'wigosID2':'0-356-20-3610256932584797'} ))
 
