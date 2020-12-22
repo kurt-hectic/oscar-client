@@ -54,7 +54,7 @@ schedules = oscar.retrieve_schedules(new_station["wigosID"])
 
 for schedule in schedules:
     tmp = schedule["schedule"].split('/')
-    schedule["schedule"] =  "{}/{}".format("/".join(tmp[0:-1]),  int(int(tmp[-1]) / 2))
+    schedule["schedule"] =  "{}/{}".format("/".join(tmp[0:-1]),  int(int(tmp[-1]) / 2)) # shorten the reporting interval by half
     print(schedule)
 
 
