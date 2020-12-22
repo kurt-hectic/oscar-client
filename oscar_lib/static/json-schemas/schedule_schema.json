@@ -19,16 +19,7 @@
         "international"
     ],
     "properties": {
-	    "gmlid": {
-            "$id": "#/properties/gmlid",
-            "type": ["string","null"],
-            "title": "The gmlid Schema",
-            "default": "",
-            "examples": [
-                "id_b074e824-4144-7937-e053-148ef98d6de4"
-            ]
-        },
-        "from": {
+	    "from": {
             "$id": "#/properties/from",
             "type": ["string","null"],
             "title": "The From Schema",

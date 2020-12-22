@@ -1,5 +1,6 @@
 import re
 import logging
+import datetime
 from lxml import etree
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -16,8 +17,15 @@ def convert_schedule_rev(schedule):
     logger.debug("convert_schedule_rev: {}".format(schedule))
 
     for elem in ["startMonth","endMonth","startWeekday","endWeekday"]:
-        schedule[elem] = month_map_rev[schedule[elem]] if schedule[elem] else None
-    
+        if "Month" in elem:
+            schedule[elem] = month_map_rev[schedule[elem]] if schedule[elem] else None
+        else:
+            schedule[elem] = weekday_map_rev[schedule[elem]] if schedule[elem] else None
+      
+    #if schedule["interval"]:
+    #    timedelta = isodate.parse_duration(schedule['interval'])
+    #    schedule["interval"]=int(timedelta.total_seconds())
+    schedule["interval"]=int(schedule["interval"])
     
     empty=True
     for k,v in schedule.items():
@@ -48,7 +56,8 @@ def convert_schedule(new_schedule):
     schedule["endHour"] = int(schedule["endHour"])
     schedule["startMinute"] = int(schedule["startMinute"])
     schedule["endMinute"] = int(schedule["endMinute"])
-    schedule["interval"] = int(schedule["interval"])
+    
+    #schedule["interval"] = isodate.duration_isoformat(datetime.timedelta(seconds=int(schedule["interval"])))
     
     return schedule
 

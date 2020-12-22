@@ -5,6 +5,7 @@ import uuid
 import jsonschema
 import json
 import xmltodict
+import isodate
 
 from dicttoxml import dicttoxml
 from lxml import etree
@@ -33,7 +34,7 @@ internalDefaultSchedule = {
     "startWeekday": 1, "endWeekday": 7,
     "startHour": 0, "startMinute": 0,          
     "endHour": 23,    "endMinute": 59,
-    "interval": "PT1H",     "international": True   
+    "interval": 3600,     "international": True   
 }
 
 def makeElemnt(prefix,name):
@@ -324,7 +325,7 @@ class Station:
             uom_elem.addnext( reporting_elem )
         else:
             reporting_elem=reporting_elem[0]
-        reporting_elem.text = defaultSchedule["interval"]
+        reporting_elem.text =  "PT{}S".format(defaultSchedule["interval"]) 
         
         exchange_elem = elem.xpath("wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange",namespaces=namespaces)
         if not exchange_elem:
@@ -495,6 +496,7 @@ class Station:
         def convert_types(path,key,value):
             int_fields = ['startMonth','endMonth','startWeekday','endWeekday','startHour','endHour','startMinute','endMinute']
             bool_fields = ['international',]
+            interval_fields = ['interval',]
             
             try:
                 if key in int_fields:
@@ -502,6 +504,9 @@ class Station:
                     
                 if key in bool_fields:
                     return key , value in ['True','true']
+                    
+                if key in interval_fields:
+                    return key, int(isodate.parse_duration(value).total_seconds())
                     
                 return key, value
             except (ValueError, TypeError):
@@ -513,7 +518,7 @@ class Station:
         for o in station['station']['observations']:  
             var_id = int(o['variableid'].split('/')[-1])
             res[var_id] = o
-
+            
         return res
         
         
@@ -635,9 +640,9 @@ class Station:
         if from_elem:
             from_elem[0].text = schedule["from"]
         if to_elem:
-            to_elem[0].text = schedule["to"]
+            to_elem[0].text = schedule["to"] #if schedule["to"] else ""
         if interval_elem:
-            interval_elem[0].text = str(schedule["interval"])
+            interval_elem[0].text =  "PT{}S".format(str(schedule["interval"]))
         if international_elem:
             international_elem[0].text = str(schedule["international"]).lower()
             

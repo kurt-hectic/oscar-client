@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 with open(mydir+"/json-schemas/create_station.json","r") as f:
     station_schema = json.load( f )
 
+with open(mydir+"/json-schemas/schedule_schema_gmlid.json","r") as f:
+    schedule_schema = json.load( f )
+
+
 class OscarInterfaceDummy(FormalOscarInterface):
    
     def __init__(self, server: str = "DEPL", token : str = None) :
@@ -26,7 +30,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
         if server != "DEPL":
             raise Exception("only DEPL implemented at this stage")
             
-        
+            
+        self.cache=True
         self.client = OscarClient(oscar_url = OscarClient.OSCAR_DEPL, token=token)
         logger.info("initalized OSCAR client for {}".format(server))   
    
@@ -132,7 +137,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         logger.debug("update_wigosid station:{},  wigos_ids: ({})".format(wigos_id,wigos_ids))
 
         try: 
-            station=Station(self.client.load_station(wigos_id=wigos_id,cache=True))
+            station=Station(self.client.load_station(wigos_id=wigos_id,cache=self.cache))
             
             
             new_wigos_ids = [ wigos_ids['primaryWigosID'] , ]
@@ -206,10 +211,13 @@ class OscarInterfaceDummy(FormalOscarInterface):
         """
         logger.debug("retrieve_schedules for station {}, variable: {}".format(wigos_ids,var_id))
         
+        if not isinstance(wigos_ids,list):
+            wigos_ids = [wigos_ids,]
+        
         schedules = {}
         
         for wid in wigos_ids:
-            station=Station(self.client.load_station(wigos_id=wid,cache=True))
+            station=Station(self.client.load_station(wigos_id=wid,cache=self.cache))
         
             schedules[wid] = station.schedules()
     
@@ -221,9 +229,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
                     for dg in deployment["datagenerations"]:
                         schedule = convert_schedule_rev(dg["schedule"])
                         
-                        
                         new_schedule = {"wigosID": wigos_id, "variable" : var_id, "deployment_id" : deployment["gid"] , "deployment_name" : "{from}-{to}".format(**deployment) ,
-            "schedule_id" : dg["gid"], "schedule_name" : "{from}-{to}".format(**schedule), "schedule" : "{startMonth}-{endMonth}/{startWeekday}-{endWeekday}/{startHour}:{startMinute}-{endHour}:{endMinute}/{interval}".format(**schedule) , "international" : dg["schedule"]["international"], "near-real-time" : True, "date_from" :  schedule["from"] , "status" : "operational" } if schedule else None
+            "schedule_id" : dg["gid"], "schedule_name" : "{from}-{to}".format(**schedule), "schedule" : "{startMonth}-{endMonth}/{startWeekday}-{endWeekday}/{startHour}:{startMinute}-{endHour}:{endMinute}/{interval}".format(**schedule) , "international" : schedule["international"], "near-real-time" : True, "date_from" :  schedule["from"], "date_to" :  schedule["to"] , "status" : "operational" } if schedule else None
                     
                         ret.append(new_schedule)
                     
@@ -252,12 +259,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
         logger.debug("update_affiliation station: {}, affiliation: {}, variables: {}, status: {}, id: {}".format(wigos_id,affiliation,variables,operational_status,program_id))
   
         try:
-            station = Station(self.client.load_station(wigos_id=wigos_id, cache=True))
-            
+            station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache))
             station.update_affiliations(affiliation=affiliation,variables=variables,operational_status=operational_status,begin_date=datetime.datetime.now())
-           
-            print(str(station))
-           
             ret=self._upload_station(station)
             
             if ret["status"] == 200 :
@@ -282,4 +285,45 @@ class OscarInterfaceDummy(FormalOscarInterface):
         Returns:
         dict: status code (status) and message (message)
         """
-        pass
+        logger.debug("update_schedule {} ({})".format(wigos_id,schedules))
+        
+        try:
+            for schedule in schedules:
+                validate( instance=schedule , schema=schedule_schema ,  format_checker=FormatChecker() )
+        except ValidationError as ve:
+            err_msg = "schedule object not valid {}".format(str(ve))
+            logger.error(err_msg)
+            return {"status":400,"message":"invalid format {}".format(err_msg) }
+        
+        
+        try:
+            station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache))
+    
+            # convert to internal schedule format
+            for schedule in schedules:
+                internal_schedule = convert_schedule(schedule["schedule"])
+                internal_schedule["international"] = schedule["international"]
+       
+                internal_schedule["from"] = schedule["date_from"]
+                internal_schedule["to"] = schedule["date_to"]
+                
+                gml_id = schedule["schedule_id"]
+                
+                station.update_schedule(gml_id,internal_schedule)
+
+            print(str(station))
+           
+            ret=self._upload_station(station)
+            
+            if ret["status"] == 200 :
+                ret = {"status": 200, "message" :  ret["message"] + " " +  "updated schedules {}".format(schedules)}
+            else:
+                msg
+        except KeyError as ke:
+                message = "error: station {} does not exist {}".format(wigos_id,str(ke))
+                ret = {"status": 400, "message" :  message }
+                logger.error(message)
+        
+        logger.info("updated schedules: status: {}, {}".format(ret["status"],ret["message"]))
+        return ret
+       

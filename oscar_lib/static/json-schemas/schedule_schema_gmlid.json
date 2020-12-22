@@ -1,0 +1,49 @@
+{
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/root.json",
+    "type": "object",
+    "title": "The Root Schema",
+    "required": [
+		"wigosID",
+        "variable",
+        "schedule_id",
+        "schedule",
+        "international",
+        "near-real-time",
+        "date_from",
+		"date_to",
+        "status"
+    ],
+    "properties": {
+		"wigosID": {
+		  "type": "string",
+		  "pattern": "^0-\\d+-\\d+-\\d{16}$"
+		},
+        "variable": {
+            "type": "integer"
+        },
+		"schedule_id": {
+			"type" : "string"
+		},
+		"schedule": {
+		    "type": "string",
+			"pattern": "^\\w{3}-\\w{3}\/\\w{3}-\\w{3}\/\\d{1,2}:\\d{1,2}-\\d{1,2}:\\d{1,2}/\\d+$"
+		},
+        "international": {
+            "type": "boolean",
+            "default": true
+        },
+        "date_from": {
+            "type": ["string","null"],
+            "format": "date-time"
+        },
+		"date_to": {
+            "type": ["string","null"],
+            "format": "date-time"
+        },
+		"status": {
+            "type": ["string","null"]
+        }
+    }
+}
