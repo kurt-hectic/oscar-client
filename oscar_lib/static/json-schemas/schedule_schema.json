@@ -129,13 +129,12 @@
         },
         "interval": {
             "$id": "#/properties/interval",
-            "type": "string",
+            "type": "integer",
             "title": "The Interval Schema",
-            "default": "PT1H",
-            "examples": [
-                "PT1H"
-            ],
-            "pattern": "^(.*)$"
+            "minimum": 0,
+			"examples": [
+                3600
+            ]
         },
         "international": {
             "$id": "#/properties/international",

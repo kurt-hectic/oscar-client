@@ -25,15 +25,15 @@ def convert_schedule_rev(schedule):
     #if schedule["interval"]:
     #    timedelta = isodate.parse_duration(schedule['interval'])
     #    schedule["interval"]=int(timedelta.total_seconds())
-    schedule["interval"]=int(schedule["interval"])
+    schedule["interval"] = int(schedule["interval"]) if schedule["interval"] else None
     
     empty=True
     for k,v in schedule.items():
         empty = empty and (v==None or v==False)
     
     
-    return None if empty else schedule
-
+    ret = None if empty else schedule
+    return ret
 
 def convert_schedule(new_schedule):
 
@@ -58,6 +58,7 @@ def convert_schedule(new_schedule):
     schedule["endMinute"] = int(schedule["endMinute"])
     
     #schedule["interval"] = isodate.duration_isoformat(datetime.timedelta(seconds=int(schedule["interval"])))
+    schedule["interval"] = int(schedule["interval"])
     
     return schedule
 

@@ -10,7 +10,6 @@
         "schedule_id",
         "schedule",
         "international",
-        "near-real-time",
         "date_from",
 		"date_to",
         "status"

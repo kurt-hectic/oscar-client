@@ -30,3 +30,6 @@ s.validate()
 client = OscarClient(oscar_url = OscarClient.OSCAR_DEPL, token="my_token")
 client.upload_XML(str(s))
 ```
+
+### tests
+run from the command line like this ```python -m unittest discover -s tests  -p "test_create.py"```

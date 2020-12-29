@@ -105,10 +105,14 @@
                 59
             ]
         },
-        "interval": {
+         "interval": {
             "$id": "#/properties/interval",
             "type": "integer",
-            "title": "The Interval Schema"
+            "title": "The Interval Schema",
+            "minimum": 0,
+			"examples": [
+                3600
+            ]
         },
         "international": {
             "$id": "#/properties/international",

@@ -21,17 +21,17 @@ with open(mydir+"/json-schemas/schedule_schema_gmlid.json","r") as f:
 
 class OscarInterfaceDummy(FormalOscarInterface):
    
-    def __init__(self, server: str = "DEPL", token : str = None) :
+    def __init__(self, server: str = "DEPL", token : str = None, cache: bool = False) :
         """initialize the OscarInterface class for usage with the token at the specificed server.
         
         server (str): whether the token is validated  in the production or testing system (PROD|DEPL) (default DEPL)
         token (str): the user API token
+        cache (bool): whether to cache load_station calls in the client (default False)
         """
         if server != "DEPL":
             raise Exception("only DEPL implemented at this stage")
             
-            
-        self.cache=True
+        self.cache=cache
         self.client = OscarClient(oscar_url = OscarClient.OSCAR_DEPL, token=token)
         logger.info("initalized OSCAR client for {}".format(server))   
    
@@ -44,14 +44,12 @@ class OscarInterfaceDummy(FormalOscarInterface):
             new_station.validate() # TODO: need to check for invalid stations (maybe here, maybe in another place)
 
             status = self.client.upload_XML(str(new_station))
-                    
+            
             if status == 'AUTH_ERROR':
                 ret = {"status": 403, "message" : "auth error. Check token"}
-                
-            if status == 'SERVER_ERROR':
+            elif status == 'SERVER_ERROR':
                 ret =  {"status": 500, "message" : "processing error on server"}
-            
-            if status in ['SUCCESS_WITH_WARNINGS','SUCCESS','VALID_XML_WITH_ERRORS_OR_WARNINGS']:
+            elif status in ['SUCCESS_WITH_WARNINGS','SUCCESS','VALID_XML_WITH_ERRORS_OR_WARNINGS']:
                 ret =  {"status": 200, "message" : "request processed: {}".format(status) }
             else:
                 ret =  {"status": 501, "message" : "unknown error ({})".format(status) }
@@ -84,7 +82,9 @@ class OscarInterfaceDummy(FormalOscarInterface):
             
         schedule = convert_schedule(station["internationalReportingFrequency"])
         schedule["international"] = station["international"]
-        schedule["real-time"] = station["realTime"]
+        
+        if "realTime" in schedule: 
+            schedule["real-time"] = station["realTime"]
 
         observation_ids = [int(o.strip()) for o in station["parametersObserved"].split(",")]
         
@@ -121,7 +121,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
 
         # add optional parameters if not empty
         for k,v in optional_parameter_map.items():
-            if v:
+            if v and k in station:
                 station_params[k]=station[v]
 
         new_station = Station(**station_params)
@@ -158,7 +158,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         except KeyError as ke:
                 message = "error: station {} does not exist {}".format(wigos_id,str(ke))
                 ret = {"status": 400, "message" :  message }
-                logger.error(message)
+                logger.info(message)
 
         logger.info("updated wigos ids: status: {} {}".format(ret["status"],ret["message"]))
         return ret
@@ -216,24 +216,33 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         schedules = {}
         
-        for wid in wigos_ids:
-            station=Station(self.client.load_station(wigos_id=wid,cache=self.cache))
+        try:
         
-            schedules[wid] = station.schedules()
-    
-        ret = []
+            for wid in wigos_ids:
+                station=Station(self.client.load_station(wigos_id=wid,cache=self.cache))
+            
+                schedules[wid] = station.schedules()
         
-        for wigos_id,station in schedules.items():
-            for var_id,observation in station.items():
-                for deployment in observation["deployments"]:
-                    for dg in deployment["datagenerations"]:
-                        schedule = convert_schedule_rev(dg["schedule"])
+            ret = []
+            
+            for wigos_id,station in schedules.items():
+                for var_id,observation in station.items():
+                    for deployment in observation["deployments"]:
+                        for dg in deployment["datagenerations"]:
+                            schedule = convert_schedule_rev(dg["schedule"])
+                            
+                            new_schedule = {"wigosID": wigos_id, "variable" : var_id, "deployment_id" : deployment["gid"] , "deployment_name" : "{from}-{to}".format(**deployment) ,
+                "schedule_id" : dg["gid"], "schedule_name" : "{from}-{to}".format(**schedule), "schedule" : "{startMonth}-{endMonth}/{startWeekday}-{endWeekday}/{startHour}:{startMinute}-{endHour}:{endMinute}/{interval}".format(**schedule) , "international" : schedule["international"], "near-real-time" : True, "date_from" :  schedule["from"], "date_to" :  schedule["to"] , "status" : "operational" } if schedule else None
                         
-                        new_schedule = {"wigosID": wigos_id, "variable" : var_id, "deployment_id" : deployment["gid"] , "deployment_name" : "{from}-{to}".format(**deployment) ,
-            "schedule_id" : dg["gid"], "schedule_name" : "{from}-{to}".format(**schedule), "schedule" : "{startMonth}-{endMonth}/{startWeekday}-{endWeekday}/{startHour}:{startMinute}-{endHour}:{endMinute}/{interval}".format(**schedule) , "international" : schedule["international"], "near-real-time" : True, "date_from" :  schedule["from"], "date_to" :  schedule["to"] , "status" : "operational" } if schedule else None
-                    
-                        ret.append(new_schedule)
-                    
+                            ret.append(new_schedule)
+            
+            
+                            
+        except KeyError as ke:
+                message = "error: station {} does not exist {}".format(wid,str(ke))
+                ret = {"status": 400, "message" :  message }
+                logger.info(message)
+        
         logger.info("retrieve_schedules {}".format(ret))
         return ret
         #return [ {"wigosID":"0-20000-2-123456", "variable" : 16 , 
@@ -270,7 +279,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         except KeyError as ke:
                 message = "error: station {} does not exist {}".format(wigos_id,str(ke))
                 ret = {"status": 400, "message" :  message }
-                logger.error(message)
+                logger.info(message)
         
         logger.info("updated affiliations: status: {}, {}".format(ret["status"],ret["message"]))
         return ret
@@ -280,7 +289,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         Parameters:
         wigos_id (str): the WIGOS identifier of the station that should be updated
-        schedules (list): list of schedules, represented as dict (schedule_schema.json), that should be updated. The gml identifier of a schedule as passed in the parameter is used to match.
+        schedules (list): list of schedules, represented as dict (schedule_schema_gmlid.json), that should be updated. The gml identifier of a schedule as passed in the parameter is used to match.
         
         Returns:
         dict: status code (status) and message (message)
@@ -292,7 +301,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
                 validate( instance=schedule , schema=schedule_schema ,  format_checker=FormatChecker() )
         except ValidationError as ve:
             err_msg = "schedule object not valid {}".format(str(ve))
-            logger.error(err_msg)
+            logger.info(err_msg)
             return {"status":400,"message":"invalid format {}".format(err_msg) }
         
         
@@ -311,7 +320,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
                 
                 station.update_schedule(gml_id,internal_schedule)
 
-            print(str(station))
+            #print(str(station))
            
             ret=self._upload_station(station)
             
@@ -322,8 +331,11 @@ class OscarInterfaceDummy(FormalOscarInterface):
         except KeyError as ke:
                 message = "error: station {} does not exist {}".format(wigos_id,str(ke))
                 ret = {"status": 400, "message" :  message }
-                logger.error(message)
+                #logger.error(message)
         
         logger.info("updated schedules: status: {}, {}".format(ret["status"],ret["message"]))
         return ret
+        
+    def close(self):
+        self.client.close()
        

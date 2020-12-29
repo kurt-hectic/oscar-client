@@ -244,7 +244,7 @@ class Station:
                 for o in kwargs["observations"]:
                     if default_schedule and not "schedule" in o.keys():
                         o["schedule"] = default_schedule.copy()
-                                            
+                    
                     validate( instance=o["schedule"] , schema=schedule_schema_small ,  format_checker=jsonschema.FormatChecker() )
                 
                 self._initializeFromDict(mydict)

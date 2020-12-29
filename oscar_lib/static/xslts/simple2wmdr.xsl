@@ -152,7 +152,6 @@
 														<wmdr:deployedEquipment xlink:type="simple">
 															<wmdr:Equipment>
 																<wmdr:observingMethod xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/unknown"/>
-																
 															</wmdr:Equipment>
 														</wmdr:deployedEquipment>
 														<wmdr:dataGeneration>

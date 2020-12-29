@@ -23,5 +23,7 @@ setup(
     install_requires=[
         'setuptools',  'bs4', 'jsonpath_ng' , 'requests' , 'lxml' , 'jsonschema','xmltodict', 'strict-rfc3339', 'dicttoxml', 'isodate'   
     ],
+    tests_require=['xmldiff',]
+    
     package_data={'': extra_files},
 )
