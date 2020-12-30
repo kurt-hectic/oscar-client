@@ -14,7 +14,7 @@ extra_files = package_files('oscar_lib/static')
 
 setup(
     name='oscar_lib',
-    version=0.61,
+    version=0.62,
     description='library implementing some functions to interact with OSCAR/Surface',
     author='Timo Proescholdt',
     author_email='tproescholdt@wmo.int',
@@ -23,7 +23,6 @@ setup(
     install_requires=[
         'setuptools',  'bs4', 'jsonpath_ng' , 'requests' , 'lxml' , 'jsonschema','xmltodict', 'strict-rfc3339', 'dicttoxml', 'isodate'   
     ],
-    tests_require=['xmldiff',]
-    
+    tests_require=['xmldiff',],
     package_data={'': extra_files},
 )
