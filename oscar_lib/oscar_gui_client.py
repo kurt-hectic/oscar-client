@@ -22,6 +22,7 @@ class OscarGUIClient(object):
     _STATION_CREATION_URL = '/rest/api/stations/station'
     _STATION_PREP_UPDATE = "/rest/api/stations/station/{internal_id}/false/secure"
     _WIGOSID_SEARCH_URL = '/rest/api/stations/approvedStations/wigosIds?q={wigosid}'
+    _STATION_DELETE_URL = '/rest/api/stations/station-delete/{internal_id}'
 
     
     _QLACK_TOKEN_NAME = "X-Qlack-Fuse-IDM-Token-GO"
@@ -277,3 +278,21 @@ class OscarGUIClient(object):
 
                     
         return result
+        
+    def delete_station(self,internal_id):
+        """deletes station with the interal id specified as parameter"""
+    
+        headers = { OscarGUIClient._QLACK_TOKEN_NAME:"{"+self.token+"}", }           
+        cookies = self.cookies
+     
+        station_delete_url = (self.oscar_url + OscarGUIClient._STATION_DELETE_URL).format(internal_id=internal_id) 
+        
+        rsp=self.session.post( station_delete_url, headers=headers, cookies=cookies )
+        log.debug("deleting station {} with header: {} ({}) cookies: {}".format(internal_id,headers, rsp.status_code,cookies))
+        
+        return rsp.status_code
+    
+   
+    def close(self):
+        if self.session:
+            self.session.close()

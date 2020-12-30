@@ -146,7 +146,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
                     new_wigos_ids.append(wigos_ids[wid])
             
             
-            station.update_wigosids(wigos_ids=new_wigos_ids) 
+            all_wigos_ids=station.update_wigosids(wigos_ids=new_wigos_ids) 
+            logger.debug("new wigos ids: {}".format(",".join(all_wigos_ids)))
             ret=self._upload_station(station)
             
             

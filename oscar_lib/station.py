@@ -590,14 +590,7 @@ class Station:
         if len(wigos_ids) == 0 or not isinstance(wigos_ids,list):
             return False
 
-        primary_wigos_id = wigos_ids.pop(0)
-        existing_wigos_ids = list(set(self.get_wigos_ids()))
-        other_wigos_ids = list(set(existing_wigos_ids + wigos_ids)) # get unique list of identifiers. not ordered
-        
-        if primary_wigos_id in other_wigos_ids:
-            other_wigos_ids.remove(primary_wigos_id)
-        
-        new_wigos_ids = [primary_wigos_id,] + other_wigos_ids
+        new_wigos_ids = list(dict.fromkeys( wigos_ids + self.get_wigos_ids() )) # remove duplicates but keep order
         
         xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier'
         wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
