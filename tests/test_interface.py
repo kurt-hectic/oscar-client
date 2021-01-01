@@ -126,3 +126,34 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(schedules)
         for schedule in schedules:
             self.assertEqual( schedule["schedule"].split('/')[-1] , "1800" )
+            
+            
+    def test_update_schedule_2(self):
+    
+    
+        params =  {'wigosID': '0-356-20-3610256932584798', 
+        'variable': 216, 
+        'deployment_id': 'depl_1_1', 
+        'deployment_name': '2020-12-09T00:00:00Z-None', 
+        'schedule_id': 'dg_1_1', 
+        'schedule': 'Jan-Jun/Mon-Fri/14:0-18:59/900', 
+        'international': True, 
+        'near-real-time': True, 
+        'date_from': '2020-12-09T00:00:00Z', 
+        'date_to': None, 
+        'status': 'operational'}
+        
+        schedules = [params,]
+
+        ret = self.interface.update_schedule(wigos_id="0-356-20-3610256932584798",schedules=schedules)
+        self.assertEqual(ret["status"],200)
+
+        schedules = self.interface.retrieve_schedules("0-356-20-3610256932584798")
+        
+        found=False
+        for schedule in schedules:
+            if schedule['schedule_id']=='dg_1_1':
+                self.assertEqual(schedule["schedule"].split('/')[-1] , "900")
+                found=True
+                
+        self.assertTrue(found)
