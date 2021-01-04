@@ -4,18 +4,17 @@ import logging
 import uuid 
 import jsonschema
 import json
-import xmltodict
 import isodate
 
-from dicttoxml import dicttoxml
 from lxml import etree
 from io import BytesIO
 from jsonschema import validate
 from copy import deepcopy
+from dict2xml import dict2xml
+import xmltodict
 
 #logging.getLogger(__name__).addHandler(logging.NullHandler())
 logger = logging.getLogger(__name__)
-logging.getLogger("dicttoxml").setLevel(logging.WARNING)
 
 
 mydir = os.path.dirname(__file__) + "/static/"
@@ -184,11 +183,22 @@ class Station:
         mydict["affiliations"]=sorted(list(set(affiliations)),reverse = True)
 
         mydict = {"station": mydict}
-    
-        my_item_func = lambda x: 'observation' if x=="observations" else ('url' if x=='urls' else 'affiliation')
-        xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
+        
+        # remove dicttoxml code
+        #my_item_func = lambda x: 'observation' if x=="observations" else ('url' if x=='urls' else 'affiliation')
+        #xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
+        #xml = xml.replace("True","true").replace("False","false")
+        
+        # adjust our dict formar to the format required by xml2dict
+        mydict["station"]["affiliations"] =  {"affiliation": mydict["station"]["affiliations"]  }         
+        mydict["station"]["urls"] =  {"url": mydict["station"]["urls"]  }         
+        mydict["station"]["observations"] =  {"observation": mydict["station"]["observations"]  }         
+        
+        xml = dict2xml(mydict, wrap=None, indent="  ")
         xml = xml.replace("True","true").replace("False","false")
+        
         self._initializeFromSimpleXML(xml)
+        
         
         
     def _initializeFromSimpleXML(self,xml):

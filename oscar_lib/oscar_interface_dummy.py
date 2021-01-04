@@ -75,8 +75,10 @@ class OscarInterfaceDummy(FormalOscarInterface):
         logger.debug("create_station {} ({})".format(wigos_id,station))
         try:
             validate( instance=station , schema=station_schema ,  format_checker=FormatChecker() )
+            if wigos_id != station["wigosID"]:
+                raise ValidationError("wigos id of station ({}) and parameter ({}) not the same".format(wigos_id,station["wigosID"]))
         except ValidationError as ve:
-            err_msg = "station object not valid {}".format(str(ve))
+            err_msg = "station object not valid: {}".format(str(ve))
             logger.error(err_msg)
             return {"status":400,"message":"invalid format {}".format(err_msg) }
             
@@ -128,7 +130,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         ret = self._upload_station(new_station)
         
-        logger.info("created new station: status: {}".format(ret["status"]))
+        logger.info("created new station {}: status: {}".format(station_params["name"],ret["status"]))
        
         return ret
                         
@@ -300,8 +302,12 @@ class OscarInterfaceDummy(FormalOscarInterface):
         try:
             for schedule in schedules:
                 validate( instance=schedule , schema=schedule_schema ,  format_checker=FormatChecker() )
+                if wigos_id != schedule["wigosID"]:
+                    raise ValidationError("wigos id of schedule ({}) and parameter ({}) not the same".format(wigos_id,schedule["wigosID"]))
+
+                
         except ValidationError as ve:
-            err_msg = "schedule object not valid {}".format(str(ve))
+            err_msg = "schedule object not valid: {}".format(str(ve))
             logger.info(err_msg)
             return {"status":400,"message":"invalid format {}".format(err_msg) }
         

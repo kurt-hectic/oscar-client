@@ -17,7 +17,7 @@
     "properties": {
 		"wigosID": {
 		  "type": "string",
-		  "pattern": "^0-\\d+-\\d+-\\d{16}$"
+		  "pattern": "^0-\\d+-\\d+-\\w{1,16}$"
 		},
         "variable": {
             "type": "integer"
