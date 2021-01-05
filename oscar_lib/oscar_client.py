@@ -78,19 +78,22 @@ class OscarClient(object):
             if response.status_code ==  200:
                 # reponse:
                 response = json.loads(response.content)
-                if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS','VALID_XML_WITH_ERRORS_OR_WARNINGS']:
+                if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
+                    status = response["xmlStatus"]
+                    message = "upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"])
+                
+                elif response["xmlStatus"] == 'VALID_XML_WITH_ERRORS_OR_WARNINGS':
                     if 'The "facility" is discarded' in response["logs"]:
                         status = 'BUSINESS_RULE_ERROR'
                         message = "upload ok, but content rejected: {logs}".format(logs=response["logs"])
-                        log.info(message)
                     else:
                         status = response["xmlStatus"]
                         message = "upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"])
-                        log.info(message)
                 else:
                     status = response["xmlStatus"]
                     message = "upload failed with status: {status} the log is {logs}".format(status=status,logs=response["logs"]) 
-                    log.info(message)
+
+                log.info(message)
             
             elif response.status_code == 401:
                 message = "Access not granted (401) error"
