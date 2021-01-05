@@ -269,7 +269,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         dict: status code (status) and message (message)
         """ 
         logger.debug("update_affiliation station: {}, affiliation: {}, variables: {}, status: {}, id: {}".format(wigos_id,affiliation,variables,operational_status,program_id))
-  
+    
         try:
             station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache))
             station.update_affiliations(affiliation=affiliation,variables=variables,operational_status=operational_status,begin_date=datetime.datetime.now())
@@ -298,6 +298,9 @@ class OscarInterfaceDummy(FormalOscarInterface):
         dict: status code (status) and message (message)
         """
         logger.debug("update_schedule {} ({})".format(wigos_id,schedules))
+        
+        if not isinstance(schedules, list):
+            schedules = [schedules,]
         
         try:
             for schedule in schedules:
