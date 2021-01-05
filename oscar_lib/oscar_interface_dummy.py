@@ -43,16 +43,18 @@ class OscarInterfaceDummy(FormalOscarInterface):
         try:
             new_station.validate() # TODO: need to check for invalid stations (maybe here, maybe in another place)
 
-            status = self.client.upload_XML(str(new_station))
+            status,message = self.client.upload_XML_detailed(str(new_station))
             
             if status == 'AUTH_ERROR':
                 ret = {"status": 403, "message" : "auth error. Check token"}
             elif status == 'SERVER_ERROR':
-                ret =  {"status": 500, "message" : "processing error on server"}
+                ret =  {"status": 500, "message" : "processing error on server ({})".format(message)}
             elif status in ['SUCCESS_WITH_WARNINGS','SUCCESS','VALID_XML_WITH_ERRORS_OR_WARNINGS']:
                 ret =  {"status": 200, "message" : "request processed: {}".format(status) }
+            elif status == 'BUSINESS_RULE_ERROR':
+                ret =  {"status": 400, "message" : "status: {} XML problem, business rule error: {}".format(status,message) }
             else:
-                ret =  {"status": 501, "message" : "unknown error ({})".format(status) }
+                ret =  {"status": 501, "message" : "unknown error status: {} ({})".format(status,message) }
                 
         except Exception as ex:
             ret = {"status": 400 , "message": "XML invalid: {}".format(str(ex))}
@@ -99,9 +101,9 @@ class OscarInterfaceDummy(FormalOscarInterface):
             
         # same length as observation to facilitate loop underneath
         if len(affiliations) == 1:
-            affiliations = affiliations[0] * len(observation_ids)
+            affiliations = [affiliations[0] for i in range(len(observation_ids)) ]
+            #affiliations = affiliations[0] * len(observation_ids)
         
-
         observations = []
         observationsource = "automaticReading" if station["automatic"] else "manualReading"
         
@@ -126,6 +128,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
             if v and k in station:
                 station_params[k]=station[v]
 
+        logger.debug("passing params: {} to new Station".format(station_params))
         new_station = Station(**station_params)
         
         ret = self._upload_station(new_station)

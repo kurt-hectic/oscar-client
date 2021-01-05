@@ -41,11 +41,29 @@ class OscarClient(object):
         
 
     def upload_XML(self,xml):
-        """
-        Uploads the string content passed in `xml` as WMDR to OSCAR.
-        Returns `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR` or `SERVER_ERROR`
+        """Uploads the string content passed in `xml` as WMDR to OSCAR.
+        
+        Parameters:
+        xml (str): the WIGOS MD record to be uploaded
+        
+        Returns:
+        status code (str) with values: `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR`,`BUSINESS_RULE_ERROR` or `SERVER_ERROR`
         """
     
+        status,message=self.upload_XML_detailed(self,xml)
+        return status
+    
+    def upload_XML_detailed(self,xml):
+        """Uploads the string content passed in `xml` as WMDR to OSCAR.
+        
+        Parameters:
+        xml (str): the WIGOS MD record to be uploaded
+        
+        Returns:
+        status code (str) with values: `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR`,`BUSINESS_RULE_ERROR` or `SERVER_ERROR`
+        message (str): the log message
+        """
+        
         if not self.token:
             raise AttributeError("no token configured.. cannot upload")
     
@@ -60,21 +78,30 @@ class OscarClient(object):
             if response.status_code ==  200:
                 # reponse:
                 response = json.loads(response.content)
-                if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
-                    log.info("upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"]))
+                if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS','VALID_XML_WITH_ERRORS_OR_WARNINGS']:
+                    if 'The "facility" is discarded' in response["logs"]:
+                        status = 'BUSINESS_RULE_ERROR'
+                        message = "upload ok, but content rejected: {logs}".format(logs=response["logs"])
+                        log.info(message)
+                    else:
+                        status = response["xmlStatus"]
+                        message = "upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"])
+                        log.info(message)
                 else:
-                    log.info("upload failed.. the log is {logs}".format(logs=response["logs"]) )
-
-                status = response["xmlStatus"]
+                    status = response["xmlStatus"]
+                    message = "upload failed with status: {status} the log is {logs}".format(status=status,logs=response["logs"]) 
+                    log.info(message)
             
             elif response.status_code == 401:
-                log.info("Access not granted (401) error")
+                message = "Access not granted (401) error"
                 status = "AUTH_ERROR"        
+                log.info(message)
             else:
-                log.info("processing error on server side {} {}".format(response.status_code,response.content))
                 status = "SERVER_ERROR"
+                message = "processing error on server side {} {}".format(response.status_code,response.content)
+                log.info(message)
             
-        return status
+        return status, message
 
     def load_station(self,wigos_id=None,cache=False):
         """Loads the station identified by its WIGOS ID `wigos_id` as WMDR XML.
