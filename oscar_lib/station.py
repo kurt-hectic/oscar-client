@@ -467,6 +467,7 @@ class Station:
             affiliation_element.addnext( makeAffiliation(affiliation,operational_status,begin_date) )
     
         # now add the affiliations under the observations
+        updated_variables = { var:False for var in variables }
         for var in variables:
             xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[@xlink:href='http://codes.wmo.int/wmdr/ObservedVariableAtmosphere/{}']]/wmdr:programAffiliation".format(var)
             
@@ -474,6 +475,7 @@ class Station:
             
             if len(observation_affiliations)==0:
                 logging.info("no observation for variable {}, skipping".format(var))
+                updated_variables[var]=True
                 continue
                         
             existing_affiliations = [elem.get("{http://www.w3.org/1999/xlink}href").split('/')[-1] for elem in observation_affiliations]
@@ -485,6 +487,9 @@ class Station:
                         xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:wmdr="http://def.wmo.int/wmdr/2017"
                         xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/{}"/>""".format(affiliation)
                 ))
+                
+                
+        return updated_variables
         
     
     
@@ -563,6 +568,18 @@ class Station:
                 
         return observation
         
+    def get_name(self):
+        """return the name of the station"""
+        
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:name'
+        name_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not name_elem:
+            raise ValueError("no name element")
+            
+        return str(name_elem[0].text)
+    
+    
     def get_wigos_ids(self,primary=True):
         """returns the WIGOS IDs of a station"""
         

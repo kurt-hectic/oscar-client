@@ -151,7 +151,16 @@ class OscarClient(object):
         
         with self.session.get( wigosid_search_url , params=params ) as rsp:
             if rsp.status_code == 200:
-                wigos_ids = [station['wigosStationIdentifiers'] for station in json.loads(rsp.content)]
+                json_stations = json.loads(rsp.content)
+                wigos_ids = [station['wigosStationIdentifiers'] for station in json_stations]
+
+                # add names to each wigos id
+                names = [station['name'] for station in json_stations]
+                for idx,station in enumerate(wigos_ids):
+                    name = names[idx]
+                    for wid in station:
+                        wid["name"]=name
+                
                 wigos_ids_concat = [ ",".join([s['wigosStationIdentifier'] for s in wids]) for wids in wigos_ids ]
 
                 result = [None for i in range(len(search_wigos_ids))]

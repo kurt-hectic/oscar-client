@@ -182,7 +182,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         logger.debug("retrieve_wigosids {}".format(any_ids))
         
         wigos_ids = self.client.get_wigos_ids(any_ids)       
-        
+        logger.debug("got {} from client".format(wigos_ids))
         result = {}
             
         for idx,station in enumerate(wigos_ids):
@@ -197,7 +197,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
                 rest = [ wid["wigosStationIdentifier"] for wid in station if not wid["primary"] ]
                 rest = rest + [None for i in range(max(0,3-len(rest)))] # make sure that the array has at least 3 entries
                 
-                result[search_wid] = { "primaryWigosID": primary , "wigosID2" : rest[0], "wigosID3" : rest[1] , "wigosID4" : rest[2] , "all" : [primary,] + [r for r in rest if r] } 
+                result[search_wid] = { "primaryWigosID": primary , "wigosID2" : rest[0], "wigosID3" : rest[1] , "wigosID4" : rest[2] , "name" : station[0]["name"]  , "all" : [primary,] + [r for r in rest if r] } 
              
         logger.info("retrieve_wigosids {}".format(result))
         return  result
@@ -273,15 +273,22 @@ class OscarInterfaceDummy(FormalOscarInterface):
         """ 
         logger.debug("update_affiliation station: {}, affiliation: {}, variables: {}, status: {}, id: {}".format(wigos_id,affiliation,variables,operational_status,program_id))
     
+        if not isinstance(variables,list):
+            raise ValueError("variables need to be passed as list. Got {}".format(variables))
+        
         try:
             station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache))
-            station.update_affiliations(affiliation=affiliation,variables=variables,operational_status=operational_status,begin_date=datetime.datetime.now())
+            updated_variables=station.update_affiliations(affiliation=affiliation,variables=variables,operational_status=operational_status,begin_date=datetime.datetime.now())
             ret=self._upload_station(station)
             
-            if ret["status"] == 200 :
+            all_updated = all(updated_variables.values())
+            
+            if ret["status"] == 200 and all_updated:
                 ret = {"status": 200, "message" :  ret["message"] + " " +  "added affiliation {} to {}".format(affiliation,variables)}
+            elif ret["status"] == 200: # not all variables updated
+                ret = {"status": 299, "message" :  ret["message"] + ". " +  "Not all variables updated. The following variables were not found: {}".format(",".join( [ str(var) for var,status in updated_variables.items() if status ] )  )}
             else:
-                msg
+                pass
         except KeyError as ke:
                 message = "error: station {} does not exist {}".format(wigos_id,str(ke))
                 ret = {"status": 400, "message" :  message }
