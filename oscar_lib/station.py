@@ -467,7 +467,7 @@ class Station:
             affiliation_element.addnext( makeAffiliation(affiliation,operational_status,begin_date) )
     
         # now add the affiliations under the observations
-        updated_variables = { var:False for var in variables }
+        updated_variables = { var:True for var in variables }
         for var in variables:
             xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[@xlink:href='http://codes.wmo.int/wmdr/ObservedVariableAtmosphere/{}']]/wmdr:programAffiliation".format(var)
             
@@ -475,7 +475,7 @@ class Station:
             
             if len(observation_affiliations)==0:
                 logging.info("no observation for variable {}, skipping".format(var))
-                updated_variables[var]=True
+                updated_variables[var]=False
                 continue
                         
             existing_affiliations = [elem.get("{http://www.w3.org/1999/xlink}href").split('/')[-1] for elem in observation_affiliations]
@@ -488,7 +488,7 @@ class Station:
                         xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/{}"/>""".format(affiliation)
                 ))
                 
-                
+        logger.debug("update_affiliations returns: {}".format(updated_variables))
         return updated_variables
         
     
@@ -535,6 +535,24 @@ class Station:
             res[var_id] = o
             
         return res
+        
+    def variables(self):
+        """returns the variables of the station"""
+
+        xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability/wmdr:observation/om:OM_Observation/om:observedProperty/@xlink:href"
+
+        variables_elements = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not variables_elements:
+            raise ValueError("no variable element")
+            
+        result = []
+        
+        for elem in variables_elements:
+            result.append(int(elem.split('/')[-1]))
+            
+        return list(set(result)) 
+
         
         
     def current_schedules(self,variables=None):

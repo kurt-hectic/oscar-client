@@ -70,7 +70,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         Parameters:
         wigos_id (str): the WIGOS identifier of the station that should be created
         station (dict): a dictionary containing the information about the station that should be created. Note that this also includes the wigos id
-        
+       
         Returns:
         dict: status code (status) and message (message)
         """
@@ -278,6 +278,10 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         try:
             station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache))
+            
+            if len(variables) == 0:
+                variables = station.variables()
+            
             updated_variables=station.update_affiliations(affiliation=affiliation,variables=variables,operational_status=operational_status,begin_date=datetime.datetime.now())
             ret=self._upload_station(station)
             
@@ -286,7 +290,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
             if ret["status"] == 200 and all_updated:
                 ret = {"status": 200, "message" :  ret["message"] + " " +  "added affiliation {} to {}".format(affiliation,variables)}
             elif ret["status"] == 200: # not all variables updated
-                ret = {"status": 299, "message" :  ret["message"] + ". " +  "Not all variables updated. The following variables were not found: {}".format(",".join( [ str(var) for var,status in updated_variables.items() if status ] )  )}
+                ret = {"status": 299, "message" :  ret["message"] + ". " +  "Not all variables updated. The following variables were not found: {}".format(",".join( [ str(var) for var,status in updated_variables.items() if not status ] )  )}
             else:
                 pass
         except KeyError as ke:
