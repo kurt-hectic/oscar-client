@@ -154,6 +154,9 @@ class Station:
     
     def _initializeFromXML(self,wmdr):
     
+        logger.debug("initializing station from XML: {}".format(wmdr))
+        
+    
         self.syntax_error=False
         self.invalid_schema=False
         self.has_been_fixed = False
@@ -176,8 +179,11 @@ class Station:
             self.invalid_schema = True
             Station.__fix_deployments(self.original_xml,mode="update",defaultSchedule=internalDefaultSchedule)
             xmlschema.assertValid(self.original_xml)
-    
+            
     def _initializeFromDict(self,mydict):
+    
+        logger.debug("initializing station from Dict: {}".format(mydict))
+
 
         affiliations = [o["affiliation"] for o in mydict["observations"] ]
         mydict["affiliations"]=sorted(list(set(affiliations)),reverse = True)
@@ -190,8 +196,11 @@ class Station:
         #xml = xml.replace("True","true").replace("False","false")
         
         # adjust our dict formar to the format required by xml2dict
-        mydict["station"]["affiliations"] =  {"affiliation": mydict["station"]["affiliations"]  }         
-        mydict["station"]["urls"] =  {"url": mydict["station"]["urls"]  }         
+        mydict["station"]["affiliations"] =  {"affiliation": mydict["station"]["affiliations"]  }
+
+        if "urls" in mydict:
+            mydict["station"]["urls"] =  {"url": mydict["station"]["urls"]  }         
+        
         mydict["station"]["observations"] =  {"observation": mydict["station"]["observations"]  }         
         
         xml = dict2xml(mydict, wrap=None, indent="  ")
@@ -202,13 +211,16 @@ class Station:
         
         
     def _initializeFromSimpleXML(self,xml):
+        
+        logger.debug("initializing station from XML: {}".format(xml))
+    
         xml_root = etree.fromstring(xml)
         
         try:
             xmlschema_simple.assertValid(xml_root)
         except etree.DocumentInvalid as di:
             logger.warning("XML invalid:",di,xml)
-            sys.exit(1)
+            #sys.exit(1)
 
         wmdr_tree  = transform_simple(xml_root) # 
         self._initializeFromXML( str(wmdr_tree).encode("utf-8") )
@@ -219,7 +231,7 @@ class Station:
     
     def __init__(self,*args, **kwargs):
         """initializes a Station object. The object can be initialized by passing a WMRD record as string, a string encoded JSON representation, a simplified XML representation or using keyword parameters."""
-        logger.debug("initializing station")
+        logger.debug("initializing station {}".format(kwargs))
         self.simplexml=None
         
         if len(args) == 1 and len(kwargs) == 0:
@@ -469,7 +481,8 @@ class Station:
         # now add the affiliations under the observations
         updated_variables = { var:True for var in variables }
         for var in variables:
-            xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[@xlink:href='http://codes.wmo.int/wmdr/ObservedVariableAtmosphere/{}']]/wmdr:programAffiliation".format(var)
+            #xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[@xlink:href='http://codes.wmo.int/wmdr/ObservedVariableAtmosphere/{}']]/wmdr:programAffiliation".format(var)
+            xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[contains(@xlink:href,'http://codes.wmo.int/wmdr/') and contains(@xlink:href,'/{}')]]/wmdr:programAffiliation".format(var)
             
             observation_affiliations = self.xml_root.xpath(xpath,namespaces=namespaces)
             

@@ -115,18 +115,18 @@ class OscarInterfaceDummy(FormalOscarInterface):
             "elevation":"altitude","country":"country","region":"region","established":"creation"
         }
         
-        optional_parameter_map = { "description":"description", "manufacturer" : None, "observationsFrequency" : None , "organization":"supervisingOrganization" }
+        optional_parameter_map = { "description":"description", "manufacturer" : None, "observationsFrequency" : None , "supervisingOrganization":"organization" }
 
         station_params = { k:station[v] for k,v in required_parameter_map.items() }
 
-        station_params["urls"] = ["http://test.de",]
+        #station_params["urls"] = ["http://test.de",]
         station_params["observations"] = observations
         station_params["default_schedule"] = schedule
 
         # add optional parameters if not empty
         for k,v in optional_parameter_map.items():
             if v and k in station:
-                station_params[k]=station[v]
+                station_params[v]=station[k]
 
         logger.debug("passing params: {} to new Station".format(station_params))
         new_station = Station(**station_params)
@@ -226,7 +226,12 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
             for wid in wigos_ids:
                 station=Station(self.client.load_station(wigos_id=wid,cache=self.cache))
-            
+                if station.invalid_schema:
+                    message = "error: station {} has an invalid XML".format(wid)
+                    ret = {"status": 499, "message" :  message }
+                    logger.info(message)
+                    return ret
+                    
                 schedules[wid] = station.schedules()
         
             ret = []
@@ -248,6 +253,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
                 message = "error: station {} does not exist {}".format(wid,str(ke))
                 ret = {"status": 400, "message" :  message }
                 logger.info(message)
+                
+       
         
         logger.info("retrieve_schedules {}".format(ret))
         return ret
@@ -278,6 +285,11 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         try:
             station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache))
+            if station.invalid_schema:
+                message = "error: station {} has an invalid XML".format(wid)
+                ret = {"status": 499, "message" :  message }
+                logger.info(message)
+                return ret
             
             if len(variables) == 0:
                 variables = station.variables()
@@ -331,6 +343,11 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         try:
             station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache))
+            if station.invalid_schema:
+                message = "error: station {} has an invalid XML".format(wid)
+                ret = {"status": 499, "message" :  message }
+                logger.info(message)
+                return ret
     
             # convert to internal schedule format
             for schedule in schedules:
@@ -351,7 +368,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
             if ret["status"] == 200 :
                 ret = {"status": 200, "message" :  ret["message"] + " " +  "updated schedules {}".format(schedules)}
             else:
-                msg
+                pass
+
         except KeyError as ke:
                 message = "error: station {} does not exist {}".format(wigos_id,str(ke))
                 ret = {"status": 400, "message" :  message }

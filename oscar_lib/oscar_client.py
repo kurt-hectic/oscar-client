@@ -5,7 +5,7 @@ import requests
 import json
 import logging
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 __pdoc__ = {} 
 
 class OscarClient(object):
@@ -50,6 +50,7 @@ class OscarClient(object):
         status code (str) with values: `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR`,`BUSINESS_RULE_ERROR` or `SERVER_ERROR`
         """
     
+        logger.debug("upload_XML" + str(xml))
         status,message=self.upload_XML_detailed(self,xml)
         return status
     
@@ -66,6 +67,9 @@ class OscarClient(object):
         
         if not self.token:
             raise AttributeError("no token configured.. cannot upload")
+    
+        logger.debug("upload_XML" + str(xml))
+        
     
         headers = { 'X-WMO-WMDR-Token' : self.token } 
 
@@ -93,16 +97,16 @@ class OscarClient(object):
                     status = response["xmlStatus"]
                     message = "upload failed with status: {status} the log is {logs}".format(status=status,logs=response["logs"]) 
 
-                log.info(message)
+                logger.info(message)
             
             elif response.status_code == 401:
                 message = "Access not granted (401) error"
                 status = "AUTH_ERROR"        
-                log.info(message)
+                logger.info(message)
             else:
                 status = "SERVER_ERROR"
                 message = "processing error on server side {} {}".format(response.status_code,response.content)
-                log.info(message)
+                logger.info(message)
             
         return status, message
 
@@ -124,7 +128,7 @@ class OscarClient(object):
             if os.path.isfile(cache_filename):
                 return open(cache_filename,"rb").read()
         
-        log.debug("getting XML for {}".format(wigos_id))
+        logger.debug("getting XML for {}".format(wigos_id))
         with requests.get(self.oscar_url + OscarClient._STATION_XML_DOWNLOAD + wigos_id ) as r:
         
             if r.status_code != 200:
@@ -145,7 +149,7 @@ class OscarClient(object):
         """
     
         wigosid_search_url = self.oscar_url + OscarClient._WIGOS_ID_SEARCH_URL
-        log.info("searching for {} at {}".format(search_wigos_ids,wigosid_search_url))
+        logger.info("searching for {} at {}".format(search_wigos_ids,wigosid_search_url))
         
         params={'WIGOSStationIdentifier': ",".join(search_wigos_ids) }       
         
@@ -200,7 +204,7 @@ class OscarClient(object):
         The parameters and accepted values are documented in the OSCAR/Surface User Manual https://library.wmo.int/index.php?lvl=notice_display&id=20824#.XkQE9Ij_rRb
         """
         oscar_search_url = self.oscar_url + OscarClient._OSCAR_SEARCH_URL
-        log.info("searching for {} at {}".format(params,oscar_search_url))
+        logger.info("searching for {} at {}".format(params,oscar_search_url))
         with self.session.get( oscar_search_url , params=params ) as rsp:
             if rsp.status_code == 200:
                 myjson={}
@@ -226,13 +230,13 @@ class OscarClient(object):
         
     # backwards compatibility methods
     def uploadXML(self,xml):
-        log.warning("deprecated: use upload_XML instead")
+        logger.warning("deprecated: use upload_XML instead")
         return self.upload_XML(xml)
         
     def oscarSearch(self,params={}):
-        log.warning("deprecated: use oscar_search instead")
+        logger.warning("deprecated: use oscar_search instead")
         return self.oscar_search(params)
         
     def getInternalIDfromWigosId(self,wigosid):
-        log.warning("deprecated: use wigos_to_internal_id instead")
+        logger.warning("deprecated: use wigos_to_internal_id instead")
         return self.wigos_to_internal_id(wigosid)

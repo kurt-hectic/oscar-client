@@ -78,7 +78,7 @@
     },
     "wigosID": {
       "type": "string",
-      "pattern": "^0-\\d+-\\d+-\\w{1,16}$"
+      "pattern": "^0-([0-9]|[1-9][0-9]*)-([0-9]|[1-9][0-9]*)-\\w{1,16}$"
     },
     "supervisingOrganization": {
       "type": "string"

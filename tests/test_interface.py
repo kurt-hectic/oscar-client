@@ -45,7 +45,8 @@ class TestInterface(unittest.TestCase):
             "automatic": True,
             "name": cls.test_name,
             "type": "landFixed",
-            "region": "southWestPacific"
+            "region": "southWestPacific",
+            "supervisingOrganization" : "EARS",
         }
         
         ret = cls.interface.create_station(wigos_id=params["wigosID"],station=params)
@@ -69,6 +70,12 @@ class TestInterface(unittest.TestCase):
         cls.client.close()
 
 
+    def test_station_created_ok(self):
+    
+        station_xml = self.client.load_station(wigos_id=self.test_wigos_id).decode("utf-8")
+    
+        self.assertIn("Environmental Agency of the Republic of Slovenia",station_xml)
+    
     def test_retrieve_wigosid(self):
         
         ret = self.interface.retrieve_wigosids(any_ids=['0-20000-0-60490',])
