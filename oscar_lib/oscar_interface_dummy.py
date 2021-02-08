@@ -226,11 +226,11 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
             for wid in wigos_ids:
                 station=Station(self.client.load_station(wigos_id=wid,cache=self.cache))
-                if station.invalid_schema:
-                    message = "error: station {} has an invalid XML".format(wid)
-                    ret = {"status": 499, "message" :  message }
-                    logger.info(message)
-                    return ret
+                #if station.invalid_schema:
+                #    message = "error: station {} has an invalid XML".format(wid)
+                #    ret = {"status": 499, "message" :  message }
+                #    logger.info(message)
+                #    return ret
                     
                 schedules[wid] = station.schedules()
         
@@ -343,11 +343,11 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         try:
             station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache))
-            if station.invalid_schema:
-                message = "error: station {} has an invalid XML".format(wid)
-                ret = {"status": 499, "message" :  message }
-                logger.info(message)
-                return ret
+            #if station.invalid_schema:
+            #    message = "error: station {} has an invalid XML".format(wid)
+            #    ret = {"status": 499, "message" :  message }
+            #    logger.info(message)
+            #    return ret
     
             # convert to internal schedule format
             for schedule in schedules:
@@ -359,21 +359,30 @@ class OscarInterfaceDummy(FormalOscarInterface):
                 
                 gml_id = schedule["schedule_id"]
                 
-                station.update_schedule(gml_id,internal_schedule)
+                no_fix_needed = station.update_schedule(gml_id,internal_schedule,override=True)
+                logger.info("update_schedule: need no fix? {} {}".format(gml_id,no_fix_needed))
+                
+                if not no_fix_needed:
+                    logger.info("fixing schedule {}".format(gml_id))
+                    station.fix_and_update_datageneration(gml_id,internal_schedule)
 
-            #print(str(station))
+            station.validate()
            
             ret=self._upload_station(station)
             
             if ret["status"] == 200 :
                 ret = {"status": 200, "message" :  ret["message"] + " " +  "updated schedules {}".format(schedules)}
-            else:
-                pass
 
         except KeyError as ke:
                 message = "error: station {} does not exist {}".format(wigos_id,str(ke))
                 ret = {"status": 400, "message" :  message }
                 #logger.error(message)
+
+        except AssertionError as ae:
+            message = "error: station {} has an invalid XML: {}".format(wigos_id,ae)
+            ret = {"status": 499, "message" :  message }
+            logger.info(message)
+
         
         logger.info("updated schedules: status: {}, {}".format(ret["status"],ret["message"]))
         return ret

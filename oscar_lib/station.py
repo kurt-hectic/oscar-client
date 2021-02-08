@@ -387,6 +387,7 @@ class Station:
             return False
 
         
+    
     def __fix_deployments(xml_root,mode="update",defaultSchedule=None):
 
         if not mode in ["delete","update"]:
@@ -684,9 +685,12 @@ class Station:
         to_elem = dg_elem.xpath("./wmdr:validPeriod/gml:TimePeriod/gml:endPosition",namespaces=namespaces)
         interval_elem = dg_elem.xpath("./wmdr:reporting/wmdr:Reporting/wmdr:temporalReportingInterval",namespaces=namespaces) 
         international_elem = dg_elem.xpath("./wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange",namespaces=namespaces) 
+        schedule_elem = dg_elem.xpath("./wmdr:schedule/wmdr:Schedule",namespaces=namespaces)
         
         # convert values to String for setting in XML.. except when None
         #schedule = { key: str(val) if val else None for (key,val) in schedule.items() }
+        
+        elements_present =  len(from_elem)>0 and len(to_elem)>0 and len(interval_elem)>0 and len(international_elem)>0 and len(schedule_elem)>0
         
         if from_elem:
             from_elem[0].text = schedule["from"]
@@ -705,6 +709,8 @@ class Station:
             if elem:
                 logger.debug("setting element '{}' to '{}'".format(key,val))
                 elem[0].text = str(val)
+                
+        return elements_present
     
     def __str__(self):
         return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding="unicode")
@@ -721,7 +727,7 @@ class Station:
     def validate(self,original=False):
         """Validates the station against the WMDR schema"""
         
-        xmlschema.assertValid(self.xml_root)
+        xmlschema.assert_(self.xml_root)
         if original:
             try:
                 xmlschema.assertValid(self.original_xml)
