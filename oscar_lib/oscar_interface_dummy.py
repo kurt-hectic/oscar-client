@@ -342,7 +342,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         
         try:
-            station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache))
+            station = Station(self.client.load_station(wigos_id=wigos_id, cache=self.cache),remove_comments=True)
             #if station.invalid_schema:
             #    message = "error: station {} has an invalid XML".format(wid)
             #    ret = {"status": 499, "message" :  message }
@@ -368,7 +368,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
 
             station.validate()
            
-            ret=self._upload_station(station)
+            ret=self._upload_station(station) # remove comments to avoid rejections
             
             if ret["status"] == 200 :
                 ret = {"status": 200, "message" :  ret["message"] + " " +  "updated schedules {}".format(schedules)}

@@ -51,6 +51,8 @@ class TestInterface(unittest.TestCase):
         
         ret = cls.interface.create_station(wigos_id=params["wigosID"],station=params)
         if not ret["status"] == 200:
+            cls.interface.close()
+            cls.client.close()
             raise Exception("station creation failed")
 
         

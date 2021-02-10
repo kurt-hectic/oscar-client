@@ -152,7 +152,7 @@ with open(mydir+"/xslts/simple2wmdr.xsl", 'r') as xslt_file:
 
 class Station:
     
-    def _initializeFromXML(self,wmdr):
+    def _initializeFromXML(self,wmdr,remove_comments=False):
     
         logger.debug("initializing station from XML: {}".format(wmdr))
         
@@ -163,7 +163,8 @@ class Station:
         
         try:
             logger.debug("validating XML")
-            self.xml_root = etree.parse(BytesIO(wmdr))
+            parser = etree.XMLParser(remove_comments=remove_comments)
+            self.xml_root = etree.parse(BytesIO(wmdr),parser)
             logger.debug('XML well formed, syntax ok.')
             # hold internal copy of original XML. Needs to be valid so that we can submit it 
             self.original_xml = deepcopy(self.xml_root)
@@ -195,10 +196,10 @@ class Station:
         #xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
         #xml = xml.replace("True","true").replace("False","false")
         
-        # adjust our dict formar to the format required by xml2dict
+        # adjust our dict format to the format required by xml2dict
         mydict["station"]["affiliations"] =  {"affiliation": mydict["station"]["affiliations"]  }
 
-        if "urls" in mydict:
+        if "urls" in mydict["station"]:
             mydict["station"]["urls"] =  {"url": mydict["station"]["urls"]  }         
         
         mydict["station"]["observations"] =  {"observation": mydict["station"]["observations"]  }         
@@ -234,7 +235,7 @@ class Station:
         logger.debug("initializing station {}".format(kwargs))
         self.simplexml=None
         
-        if len(args) == 1 and len(kwargs) == 0:
+        if len(args) == 1 and (len(kwargs) == 0 or (len(kwargs)==1 and 'remove_comments' in kwargs)) :
             info = args[0]
             try:
                 if not type(info) is dict:                    
@@ -243,7 +244,8 @@ class Station:
             except json.decoder.JSONDecodeError: 
                 try:
                     logger.debug("input not JSON.. try XML in WMDR")
-                    self._initializeFromXML(info)
+                    remove_comments = kwargs.get('remove_comments',False)
+                    self._initializeFromXML(info,remove_comments=remove_comments)
                 except etree.DocumentInvalid:
                     logger.debug("input not WMDR, trying simple XML")
                     try:
@@ -713,7 +715,7 @@ class Station:
         return elements_present
     
     def __str__(self):
-        return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding="unicode")
+        return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding="unicode"  )
         
     def simple_xml(self):
         """returns the simplified XML represtnations of the station
