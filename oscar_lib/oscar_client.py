@@ -68,7 +68,7 @@ class OscarClient(object):
         if not self.token:
             raise AttributeError("no token configured.. cannot upload")
     
-        logger.debug("upload_XML" + str(xml))
+        logger.debug("upload_XML_detailed" + str(xml))
         
     
         headers = { 'X-WMO-WMDR-Token' : self.token } 
@@ -77,37 +77,46 @@ class OscarClient(object):
         xml_upload_url = self.oscar_url + OscarClient._STATION_XML_UPLOAD
 
         status=None
-        with requests.post( xml_upload_url , data=content , headers=headers  ) as response:
+        with requests.post( xml_upload_url , data=content , headers=headers  ) as resp:
+            #logger.debug("response: ", resp.text )
 
-            if response.status_code ==  200:
-                # reponse:
-                response = json.loads(response.content)
-                if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
-                    status = response["xmlStatus"]
-                    message = "upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"])
-                
-                elif response["xmlStatus"] == 'VALID_XML_WITH_ERRORS_OR_WARNINGS':
-                    if 'The "facility" is discarded' in response["logs"]:
-                        status = 'BUSINESS_RULE_ERROR'
-                        message = "upload ok, but content rejected: {logs}".format(logs=response["logs"])
-                    else:
+            try:
+                if resp.status_code ==  200:
+                    # reponse:
+                    #response = json.loads(resp.content)
+                    response = resp.json()
+
+                    if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
                         status = response["xmlStatus"]
                         message = "upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"])
-                else:
-                    status = response["xmlStatus"]
-                    message = "upload failed with status: {status} the log is {logs}".format(status=status,logs=response["logs"]) 
+                    
+                    elif response["xmlStatus"] == 'VALID_XML_WITH_ERRORS_OR_WARNINGS':
+                        if 'The "facility" is discarded' in response["logs"]:
+                            status = 'BUSINESS_RULE_ERROR'
+                            message = "upload ok, but content rejected: {logs}".format(logs=response["logs"])
+                        else:
+                            status = response["xmlStatus"]
+                            message = "upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"])
+                    else:
+                        status = response["xmlStatus"]
+                        message = "upload failed with status: {status} the log is {logs}".format(status=status,logs=response["logs"]) 
 
-                logger.info(message)
-            
-            elif response.status_code == 401:
-                message = "Access not granted (401) error"
-                status = "AUTH_ERROR"        
-                logger.info(message)
-            else:
+                    logger.info(message)
+                
+                elif resp.status_code == 401:
+                    message = "Access not granted (401) error"
+                    status = "AUTH_ERROR"        
+                    logger.info(message)
+                else:
+                    status = "SERVER_ERROR"
+                    message = "processing error on server side {} {}".format(response.status_code,response.content)
+                    logger.info(message)
+            except:
                 status = "SERVER_ERROR"
-                message = "processing error on server side {} {}".format(response.status_code,response.content)
-                logger.info(message)
+                message = "OSCAR/Surface did not return the expected return format.. OSCAR may be down"
+                
             
+        logger.info("status: {} message: {} ".format(status,message))
         return status, message
 
     def load_station(self,wigos_id=None,cache=False):
