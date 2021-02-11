@@ -11,8 +11,7 @@
         "schedule",
         "international",
         "date_from",
-		"date_to",
-        "status"
+		"date_to"
     ],
     "properties": {
 		"wigosID": {
@@ -40,9 +39,6 @@
 		"date_to": {
             "type": ["string","null"],
             "format": "date-time"
-        },
-		"status": {
-            "type": ["string","null"]
         }
     }
 }
