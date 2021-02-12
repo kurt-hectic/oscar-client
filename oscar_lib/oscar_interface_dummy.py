@@ -87,6 +87,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
         schedule = convert_schedule(station["internationalReportingFrequency"])
         schedule["international"] = station["international"]
         
+        station["creation"] = datetime.datetime.fromisoformat(station["creation"]).strftime("%Y-%m-%d")
+        
         if "realTime" in schedule: 
             schedule["real-time"] = station["realTime"]
 

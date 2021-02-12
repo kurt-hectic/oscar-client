@@ -6,7 +6,6 @@
     "title": "The Root Schema",
     "required": [
 		"wigosID",
-        "variable",
         "schedule_id",
         "schedule",
         "international",

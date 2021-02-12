@@ -27,6 +27,8 @@ class TestCreateStation(unittest.TestCase):
               
                 #self.assertEqual(xml_station,xml_test)
     
+    
+            
     def test_create_json(self):
         
         station_json = {

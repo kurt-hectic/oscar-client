@@ -33,7 +33,7 @@ class TestInterface(unittest.TestCase):
             "latitude": 77.64,
             "longitude": 32.78,
             "altitude": 23,
-            "creation": "2020-12-09",
+            "creation": "2020-12-09T01:00:00+01:00",
             "international": True,
             "parametersObserved": "216, 224",
             "operationalStatus": "operational",

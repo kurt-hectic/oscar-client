@@ -40,7 +40,7 @@
     },
     "creation": {
       "type": "string",
-	  "format": "date"
+	  "format": "date-time"
     },
     "international": {
       "type": "boolean"
