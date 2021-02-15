@@ -1,4 +1,4 @@
-import os
+import os, sys, traceback
 from random import choice
 from string import ascii_uppercase
 
@@ -76,7 +76,7 @@ class TestInterface(unittest.TestCase):
     
         station_xml = self.client.load_station(wigos_id=self.test_wigos_id).decode("utf-8")
     
-        self.assertIn("Environmental Agency of the Republic of Slovenia",station_xml)
+        self.assertIn("EARS",station_xml)
     
     def test_retrieve_wigosid(self):
         

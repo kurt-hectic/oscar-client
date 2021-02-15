@@ -1,4 +1,4 @@
-import os, json, datetime, logging
+import os, json, datetime, logging, isodate
 
 from jsonschema import validate, FormatChecker
 from jsonschema.exceptions import ValidationError
@@ -87,7 +87,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         schedule = convert_schedule(station["internationalReportingFrequency"])
         schedule["international"] = station["international"]
         
-        station["creation"] = datetime.datetime.fromisoformat(station["creation"]).strftime("%Y-%m-%d")
+        station["creation"] = isodate.parse_datetime(station["creation"]).strftime("%Y-%m-%d")
         
         if "realTime" in schedule: 
             schedule["real-time"] = station["realTime"]
