@@ -32,7 +32,8 @@ def convert_schedule_rev(schedule):
         empty = empty and (v==None or v==False)
     
     
-    ret = None if empty else schedule
+    #ret = None if empty else schedule
+    ret = schedule
     return ret
 
 def convert_schedule(new_schedule):
