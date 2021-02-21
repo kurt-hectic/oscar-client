@@ -113,7 +113,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
             observations.append( { "variable" : oid , "observationsource" : observationsource , "affiliation": affiliations[idx] , "schedule": schedule } )
 
         required_parameter_map = { "name" : "name", "stationtype":"type", "status":"operationalStatus",
-            "wigosid":"wigosID","timezone":"utc","latitude":"latitude","longitude":"longitude",
+            "wigosid":"wigosID","latitude":"latitude","longitude":"longitude",
             "elevation":"altitude","country":"country","region":"region","established":"creation"
         }
         
