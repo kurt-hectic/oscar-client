@@ -141,7 +141,8 @@ class OscarClient(object):
         with requests.get(self.oscar_url + OscarClient._STATION_XML_DOWNLOAD + wigos_id ) as r:
         
             if r.status_code != 200:
-                raise KeyError("{} not contained in OSCAR or cannot be downloaded".format(wigos_id))
+                logger.info("cannot retrieve station: status: {} message: {} ".format(r.status_code,r.text))
+                raise ValueError("{} not contained in OSCAR or cannot be downloaded".format(wigos_id))
         
             wmdr = r.content 
         
@@ -184,6 +185,7 @@ class OscarClient(object):
                     else:
                         result[idx] = None
                 
+                logger.debug("get_wigos_id: ret: {}".format(result))
                 return result 
 
             else:
@@ -191,6 +193,7 @@ class OscarClient(object):
                 ret["status_code"] = rsp.status_code
                 ret["message"] = str(rsp.content) 
 
+                logger.debug("get_wigos_id: ret: {}".format(ret))
                 return ret
                 
                 

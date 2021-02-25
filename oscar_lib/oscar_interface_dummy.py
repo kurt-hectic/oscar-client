@@ -84,6 +84,13 @@ class OscarInterfaceDummy(FormalOscarInterface):
             logger.error(err_msg)
             return {"status":400,"message":"invalid format {}".format(err_msg) }
             
+        # check if station exists
+        if self.client.get_wigos_ids([wigos_id,])[0]:
+            err_msg = "station {} already exits".format(wigos_id)
+            logger.error(err_msg)
+            return {"status":400,"message":err_msg }
+            
+            
         schedule = convert_schedule(station["internationalReportingFrequency"])
         schedule["international"] = station["international"]
         
@@ -241,6 +248,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
             for wigos_id,station in schedules.items():
                 for var_id,observation in station.items():
                     for deployment in observation["deployments"]:
+
                         for dg in deployment["datagenerations"]:
                             schedule = convert_schedule_rev(dg["schedule"])
                             
@@ -249,10 +257,14 @@ class OscarInterfaceDummy(FormalOscarInterface):
                         
                             ret.append(new_schedule)
             
-            
-                            
         except KeyError as ke:
-                message = "error: station {} does not exist {}".format(wid,str(ke))
+                message = "error with schedule format: schedule for station {} does not have a an element {}. Adding a schedule in OSCAR may help.".format(wid,str(ke))
+                ret = {"status": 400, "message" :  message }
+                logger.info(message)
+          
+                            
+        except ValueError as ve:
+                message = "error: station {} does not exist {}".format(wid,str(ve))
                 ret = {"status": 400, "message" :  message }
                 logger.info(message)
                 

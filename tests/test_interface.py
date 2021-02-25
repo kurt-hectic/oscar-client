@@ -10,6 +10,7 @@ import logging
 logging.basicConfig(level=logging.WARNING)
 logging.getLogger("oscar_lib").setLevel(logging.WARNING)
 logging.getLogger("oscar_lib.oscar_interface_dummy").setLevel(logging.INFO)
+logging.getLogger("oscar_lib.oscar_client").setLevel(logging.DEBUG)
 
 from oscar_lib import OscarInterfaceDummy
 
@@ -70,8 +71,43 @@ class TestInterface(unittest.TestCase):
         client.close()
         
         cls.client.close()
+        
+    def test_create_existing(self):
+        
+        ## create station
+        rand_str = ''.join(choice(ascii_uppercase) for i in range(6))
 
+        self.test_name = "TEST CLIENT TIMO ({})".format(rand_str)
+        self.test_wigos_id = "0-20000-0-06610" ## good old payerne
 
+        params = {
+            "rowNumber": 1,
+            "latitude": 48.864716,
+            "longitude": 2.349014,
+            "altitude": 23,
+            "creation": "2020-12-09",
+            "international": True,
+            "parametersObserved": "216, 224",
+            #"parametersObserved": "216",
+            "operationalStatus": "partlyOperational",
+            "affiliations": "GOS, GUAN",
+            #"affiliations": "GOS",
+            "internationalReportingFrequency": "Jan-Jun/Mon-Fri/14:00-18:59/3600",
+            "country": "IND",
+            "utc": "UTC-06:00",
+            "wigosID": self.test_wigos_id,
+            "automatic": True,
+            "name": self.test_name,
+            "type": "landFixed",
+            "region": "southWestPacific",
+            "supervisingOrganization" : "EARS",
+        }
+        
+        ret = self.interface.create_station(wigos_id=params["wigosID"],station=params)
+        
+        self.assertEqual(ret["status"],400)
+       
+    
     def test_station_created_ok(self):
     
         station_xml = self.client.load_station(wigos_id=self.test_wigos_id).decode("utf-8")
