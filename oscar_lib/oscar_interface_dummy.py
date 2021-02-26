@@ -248,6 +248,9 @@ class OscarInterfaceDummy(FormalOscarInterface):
             for wigos_id,station in schedules.items():
                 for var_id,observation in station.items():
                     for deployment in observation["deployments"]:
+                    
+                        if not 'datagenerations' in deployment: # skip deployments without datagenerations
+                            continue
 
                         for dg in deployment["datagenerations"]:
                             schedule = convert_schedule_rev(dg["schedule"])
