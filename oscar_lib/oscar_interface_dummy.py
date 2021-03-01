@@ -247,9 +247,15 @@ class OscarInterfaceDummy(FormalOscarInterface):
             
             for wigos_id,station in schedules.items():
                 for var_id,observation in station.items():
+                
+                    if not 'deployments' in observation:
+                        logger.debug("skipping observation due to lacking deployments")
+                        continue
+                
                     for deployment in observation["deployments"]:
                     
                         if not 'datagenerations' in deployment: # skip deployments without datagenerations
+                            logger.debug("skipping deployment due to lacking datagenerations")
                             continue
 
                         for dg in deployment["datagenerations"]:
