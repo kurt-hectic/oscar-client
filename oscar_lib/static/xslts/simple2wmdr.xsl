@@ -149,6 +149,11 @@
 											<wmdr:Process gml:id="proc_{position()}_1">
 												<wmdr:deployment>
 													<wmdr:Deployment gml:id="depl_{position()}_1">
+														<wmdr:deployedEquipment xlink:type="simple">
+															<wmdr:Equipment>
+																<wmdr:observingMethod xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/unknown"/>
+															</wmdr:Equipment>
+														</wmdr:deployedEquipment>
 														<wmdr:dataGeneration>
 															<wmdr:DataGeneration gml:id="dg_{position()}_1">
 																<wmdr:validPeriod>
