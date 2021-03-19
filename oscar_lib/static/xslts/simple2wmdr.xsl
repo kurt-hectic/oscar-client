@@ -24,7 +24,7 @@
 										</gmd:organisationName>
 									</xsl:if>
 									<gmd:role>
-										<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists#CI_RoleCode" codeListValue="pointOfContact"/>
+										<gmd:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelists/gml/CI_RoleCode.xml/owner" codeListValue="owner"/>
 									</gmd:role>
 								</gmd:CI_ResponsibleParty>
 							</wmdr:responsibleParty>
