@@ -5,8 +5,7 @@ import requests
 import json
 import logging
 
-#logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 __pdoc__ = {} 
 
 class OscarClient(object):
@@ -22,6 +21,7 @@ class OscarClient(object):
     _STATION_SEARCH_URL = '//rest/api/search/station?stationClass={stationClass}'
     _STATION_XML_UPLOAD = '//rest/api/wmd/upload'
     _STATION_XML_DOWNLOAD = '//rest/api/wmd/download/'
+    _WIGOS_ID_SEARCH_URL = '//rest/api/stations/identify'
 
     OSCAR_DEFAULT = 'https://oscar.wmo.int/surface'
     """The URL of the production system"""
@@ -38,16 +38,38 @@ class OscarClient(object):
         self.oscar_url = oscar_url if oscar_url else OscarClient.OSCAR_DEFAULT
         self.token = token
         self.session = requests.Session()
-
+        
 
     def upload_XML(self,xml):
-        """
-        Uploads the string content passed in `xml` as WMDR to OSCAR.
-        Returns `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR` or `SERVER_ERROR`
+        """Uploads the string content passed in `xml` as WMDR to OSCAR.
+        
+        Parameters:
+        xml (str): the WIGOS MD record to be uploaded
+        
+        Returns:
+        status code (str) with values: `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR`,`BUSINESS_RULE_ERROR` or `SERVER_ERROR`
         """
     
+        logger.debug("upload_XML" + str(xml))
+        status,message=self.upload_XML_detailed(self,xml)
+        return status
+    
+    def upload_XML_detailed(self,xml):
+        """Uploads the string content passed in `xml` as WMDR to OSCAR.
+        
+        Parameters:
+        xml (str): the WIGOS MD record to be uploaded
+        
+        Returns:
+        status code (str) with values: `SUCCESS`,`SUCCESS_WITH_WARNINGS`,`AUTH_ERROR`,`BUSINESS_RULE_ERROR` or `SERVER_ERROR`
+        message (str): the log message
+        """
+        
         if not self.token:
             raise AttributeError("no token configured.. cannot upload")
+    
+        logger.debug("upload_XML_detailed" + str(xml))
+        
     
         headers = { 'X-WMO-WMDR-Token' : self.token } 
 
@@ -55,26 +77,47 @@ class OscarClient(object):
         xml_upload_url = self.oscar_url + OscarClient._STATION_XML_UPLOAD
 
         status=None
-        with requests.post( xml_upload_url , data=content , headers=headers  ) as response:
+        with requests.post( xml_upload_url , data=content , headers=headers  ) as resp:
+            #logger.debug("response: ", resp.text )
 
-            if response.status_code ==  200:
-                # reponse:
-                response = json.loads(response.content)
-                if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
-                    log.info("upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"]))
+            try:
+                if resp.status_code ==  200:
+                    # reponse:
+                    #response = json.loads(resp.content)
+                    response = resp.json()
+
+                    if response["xmlStatus"] in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
+                        status = response["xmlStatus"]
+                        message = "upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"])
+                    
+                    elif response["xmlStatus"] == 'VALID_XML_WITH_ERRORS_OR_WARNINGS':
+                        if 'The "facility" is discarded' in response["logs"]:
+                            status = 'BUSINESS_RULE_ERROR'
+                            message = "upload ok, but content rejected: {logs}".format(logs=response["logs"])
+                        else:
+                            status = response["xmlStatus"]
+                            message = "upload ok, new id {id} {logs}".format(id=response["id"],logs=response["logs"])
+                    else:
+                        status = response["xmlStatus"]
+                        message = "upload failed with status: {status} the log is {logs}".format(status=status,logs=response["logs"]) 
+
+                    logger.info(message)
+                
+                elif resp.status_code == 401:
+                    message = "Access not granted (401) error"
+                    status = "AUTH_ERROR"        
+                    logger.info(message)
                 else:
-                    log.info("upload failed.. the log is {logs}".format(logs=response["logs"]) )
-
-                status = response["xmlStatus"]
-            
-            elif response.status_code == 401:
-                log.info("Access not granted (401) error")
-                status = "AUTH_ERROR"        
-            else:
-                log.info("processing error on server side {} {}".format(response.status_code,response.content))
+                    status = "SERVER_ERROR"
+                    message = "processing error on server side {} {}".format(response.status_code,response.content)
+                    logger.info(message)
+            except:
                 status = "SERVER_ERROR"
+                message = "OSCAR/Surface did not return the expected return format.. OSCAR may be down"
+                
             
-        return status
+        logger.info("status: {} message: {} ".format(status,message))
+        return status, message
 
     def load_station(self,wigos_id=None,cache=False):
         """Loads the station identified by its WIGOS ID `wigos_id` as WMDR XML.
@@ -94,11 +137,12 @@ class OscarClient(object):
             if os.path.isfile(cache_filename):
                 return open(cache_filename,"rb").read()
         
-        log.debug("getting XML for {}".format(wigos_id))
+        logger.debug("getting XML for {}".format(wigos_id))
         with requests.get(self.oscar_url + OscarClient._STATION_XML_DOWNLOAD + wigos_id ) as r:
         
             if r.status_code != 200:
-                raise KeyError("{} not contained in OSCAR or cannot be downloaded".format(wigos_id))
+                logger.info("cannot retrieve station: status: {} message: {} ".format(r.status_code,r.text))
+                raise ValueError("{} not contained in OSCAR or cannot be downloaded".format(wigos_id))
         
             wmdr = r.content 
         
@@ -109,6 +153,50 @@ class OscarClient(object):
             return wmdr
         
         
+    def get_wigos_ids(self,search_wigos_ids):
+        """Returns all wigos identifiers of the indicated stations 
+        The return result respects the order of the parameters passed. None indicated that the WIGOS ID was not found in OSCAR
+        """
+    
+        wigosid_search_url = self.oscar_url + OscarClient._WIGOS_ID_SEARCH_URL
+        logger.info("searching for {} at {}".format(search_wigos_ids,wigosid_search_url))
+        
+        params={'WIGOSStationIdentifier': ",".join(search_wigos_ids) }       
+        
+        with self.session.get( wigosid_search_url , params=params ) as rsp:
+            if rsp.status_code == 200:
+                json_stations = json.loads(rsp.content)
+                wigos_ids = [station['wigosStationIdentifiers'] for station in json_stations]
+
+                # add names to each wigos id
+                names = [station['name'] for station in json_stations]
+                for idx,station in enumerate(wigos_ids):
+                    name = names[idx]
+                    for wid in station:
+                        wid["name"]=name
+                
+                wigos_ids_concat = [ ",".join([s['wigosStationIdentifier'] for s in wids]) for wids in wigos_ids ]
+
+                result = [None for i in range(len(search_wigos_ids))]
+                for idx,swid in enumerate(search_wigos_ids):
+                    res = [pos for pos,i in enumerate(wigos_ids_concat) if swid in i] 
+                    if len(res)>0:
+                        result[idx]=wigos_ids[res[0]]
+                    else:
+                        result[idx] = None
+                
+                logger.debug("get_wigos_id: ret: {}".format(result))
+                return result 
+
+            else:
+                ret = {}
+                ret["status_code"] = rsp.status_code
+                ret["message"] = str(rsp.content) 
+
+                logger.debug("get_wigos_id: ret: {}".format(ret))
+                return ret
+                
+                
     def wigos_to_internal_id(self,wigos_id):
         """Maps the `wigosid` to the internal id of the corresponding station in OSCAR
         Returns the `internal_id` of OSCAR.
@@ -128,7 +216,7 @@ class OscarClient(object):
         The parameters and accepted values are documented in the OSCAR/Surface User Manual https://library.wmo.int/index.php?lvl=notice_display&id=20824#.XkQE9Ij_rRb
         """
         oscar_search_url = self.oscar_url + OscarClient._OSCAR_SEARCH_URL
-        log.info("searching for {} at {}".format(params,oscar_search_url))
+        logger.info("searching for {} at {}".format(params,oscar_search_url))
         with self.session.get( oscar_search_url , params=params ) as rsp:
             if rsp.status_code == 200:
                 myjson={}
@@ -154,13 +242,13 @@ class OscarClient(object):
         
     # backwards compatibility methods
     def uploadXML(self,xml):
-        log.warning("deprecated: use upload_XML instead")
+        logger.warning("deprecated: use upload_XML instead")
         return self.upload_XML(xml)
         
     def oscarSearch(self,params={}):
-        log.warning("deprecated: use oscar_search instead")
+        logger.warning("deprecated: use oscar_search instead")
         return self.oscar_search(params)
         
     def getInternalIDfromWigosId(self,wigosid):
-        log.warning("deprecated: use wigos_to_internal_id instead")
+        logger.warning("deprecated: use wigos_to_internal_id instead")
         return self.wigos_to_internal_id(wigosid)

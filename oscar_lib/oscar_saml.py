@@ -54,7 +54,7 @@ class OscarSaml(object):
 
         log.debug("got html {}".format(html))
 
-        #log.debug("accessing {}".format(url))
+        log.debug("accessing {}".format(url))
         #log.debug("form {}".format(html))
         
         soup = BeautifulSoup(html, 'html.parser')
@@ -87,7 +87,7 @@ class OscarSaml(object):
         
         headers = {"Accept-Language": "en-US,en;"}
         
-        log.debug("going to url {}".format(url))
+        log.info("going to url {}".format(url))
         
         if mode=="POST":
             r = session.post(url,data=params,headers=headers)
@@ -115,13 +115,15 @@ class OscarSaml(object):
                 log.warning("BIT Login failed: {}".format(element.string))
                 raise Exception("login into BIT failed")
             else:
-                log.debug("BIT login ok..")
+                log.info("BIT login ok..")
+                #print(html_doc)
                 
         #print(html_doc)
 
         
         [params,actionurl] = self.__parseFormInputs(html_doc,url)  
-        #log.info("returning {} and {}".format(params,actionurl))
+        #log.info("returning url {} ".format(actionurl))
+        log.debug("returning {} and {}".format(params,actionurl))
 
         return [params,actionurl]
 
@@ -174,24 +176,24 @@ class OscarSaml(object):
     def _login(self,username,password):    
 
         try:        
-            log.debug("step 1: oscar login button")
+            log.info("step 1: oscar login button")
             oscarSession = requests.Session()
             login_url = self.oscar_url + "//save-state?programId="
             [params,nexturl]=self.__requestUrlandGetForm(login_url,oscarSession,None,"initiating oscar session","GET")
                 
-            log.debug("step 2: send SAML token to BIT")
+            log.info("step 2: send SAML token to BIT")
             bitSession = requests.Session()
             [params2,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params,"sending SAML token to BIT")
 
             params["HomeRealmSelection"] = "urn:eiam.admin.ch:idp:e-id:CH-LOGIN"
             
-            log.debug("step 2.1: BIT redirect")
-            bitSession = requests.Session()
+            log.info("step 2.1: BIT redirect")
+            #bitSession = requests.Session()
             [params21,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params,"BIT redirect")
             
             #sys.exit(1)
 
-            log.debug("step 3: contacting IDP")
+            log.info("step 3: contacting IDP")
             [params3,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params21,"SSO at BIT")
             
             #prepare for login
@@ -199,29 +201,34 @@ class OscarSaml(object):
             params3['isiwebpasswd']=password
 
             # login
-            log.debug("step 4: sending username and password to BIT")
+            log.info("step 4: sending username and password to BIT")
             [params4,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params3,"sending username and password to BIT")
             
-            log.debug("step 5: get SAML token")
-            # get final SAML token
-            [params5,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params4,"SSO2 at BIT")
+            # ok to disabled TFA
+            params4={"LogrendAppl":"PrivateIdp" , "goToApp":"goToApp"}
+            log.info("step 4.1: ok to disabled TFA")
+            [params41,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params4,"ok to TFA")
             
-            log.debug("step 6: returning to OSCAR")
+            
+            log.info("step 5: get SAML token")
+            # get final SAML token
+            [params5,nexturl]=self.__requestUrlandGetForm(nexturl,bitSession,params41,"SSO2 at BIT")
+            
+            log.info("step 6: returning to OSCAR")
             # we're back to OSCAR
             [params6,nexturl]=self.__requestUrlandGetForm(nexturl,oscarSession,params5,"back to OSCAR")
 
-            log.debug("step 7: SSO at OSCAR")    
+            log.info("step 7: SSO at OSCAR")    
             # OSCAR sso
             [params7,nexturl]=self.__requestUrlandGetForm(nexturl,oscarSession,params6,"SSO at OSCAR")
 
-            log.debug("step 8: authentication at OSCAR")
+            log.info("step 8: authentication at OSCAR")
             # OSCAR auth
             [params8,nexturl]=self.__requestUrlandGetForm(nexturl,oscarSession,params7,"auth at OSCAR")
             oscar_cookies = oscarSession.cookies.get_dict()
 
-            log.debug("cookies: {}".format( oscar_cookies ))
+            log.info("cookies: {}".format( oscar_cookies ))
 
-            log.debug("cookies: {}".format(oscar_cookies))
             
             qlack_cookie = oscar_cookies[QLACK_TOKEN_NAME]
             log.debug("qlack cookie: {}".format(qlack_cookie))
@@ -230,25 +237,28 @@ class OscarSaml(object):
             qlack_token = '"ticketID":"{ticketID}","validUntil":{validUntil},"autoExtendValidUntil":{autoExtendValidUntil},"autoExtendDuration":{autoExtendDuration},"userID":"{userID}","username":"{username}","signature":"{signature}"'.format(**ticket)
             
             log.debug("token: {}".format(qlack_token))
-                
             # test if we are logged in.
 
             login_data = self.user_credentials(oscar_cookies , qlack_token)
-
             # "username":"72119686-3962-4bc2-8652-59af15ba20bd"
             username_token = ticket["username"] 
             username_data = login_data["id"]
-            log.debug("obtained usernames {} and {} ".format(username_token,username_data))
+            log.info("obtained usernames {} and {} ".format(username_token,username_data))
+            
+            oscarSession.close()
+            bitSession.close()
             
             if username_token == username_data:
                 ret = {'token' : qlack_token , 'cookies' : oscar_cookies }
-                log.debug("sucesfully logged on {}, session info {}".format(username_token,ret))
+                log.info("sucesfully logged on {}, session info {}".format(username_token,ret))
                 return ret
             else:
-                log.warning(" logged for {} {} unsucessfull".format(username_token,username_data))
+                log.info(" logged for {} {} unsucessfull".format(username_token,username_data))
                 return False
                 
         except Exception as e:
             log.warning("login problem.. {}".format(e))
+            oscarSession.close()
+            bitSession.close()
             return False
 

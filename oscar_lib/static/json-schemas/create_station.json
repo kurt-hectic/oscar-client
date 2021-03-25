@@ -1,0 +1,95 @@
+{
+  "title": "Create station",
+  "description": "to create station values",
+  "required": [
+	"name",
+	"type",
+    "latitude",
+    "longitude",
+    "altitude",
+    "creation",
+    "international",
+    "parametersObserved",
+	"internationalReportingFrequency",
+    "country",
+    "wigosID",
+	"automatic",
+	"region"
+  ],
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+	"type": {
+      "type": "string"
+    },
+    "latitude": {
+      "type": "number",
+	  "minimum" : -90,
+	  "maximum" : 90
+    },
+    "longitude": {
+      "type": "number",
+	  "minimum" : -180,
+	  "maximum" : 180
+    },
+    "altitude": {
+      "type": "number"
+    },
+    "creation": {
+      "type": "string",
+	  "format": "date-time"
+    },
+    "international": {
+      "type": "boolean"
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "parametersObserved": {
+      "type": "string",
+      "pattern": "^(\\d+)(\\s*,\\s*\\d+)*$"
+    },
+    "operationalStatus": {
+      "type": "string"
+    },
+    "realTime": {
+      "type": "boolean"
+    },
+    "affiliations": {
+      "type": "string",
+      "pattern": "^(\\w+)(\\s*,\\s*\\w+)*$"
+    },
+    "observationsFrequency": {
+      "type": "string",
+      "pattern": "^\\w{3}-\\w{3}\/\\w{3}-\\w{3}\/\\d{1,2}:\\d{1,2}-\\d{1,2}:\\d{1,2}/\\d+$"
+    },
+    "internationalReportingFrequency": {
+      "type": "string",
+      "pattern": "^\\w{3}-\\w{3}\/\\w{3}-\\w{3}\/\\d{1,2}:\\d{1,2}-\\d{1,2}:\\d{1,2}/\\d+$"
+	},
+    "country": {
+      "type": "string"
+    },
+    "utc": {
+      "type": "string"
+    },
+    "wigosID": {
+      "type": "string",
+      "pattern": "^0-([0-9]|[1-9][0-9]*)-([0-9]|[1-9][0-9]*)-\\w{1,16}$"
+    },
+    "supervisingOrganization": {
+      "type": "string"
+    },
+	"automatic": {
+      "type": "boolean"
+    },
+	"region": {
+	  "type": "string"
+	},
+	"description": {
+	  "type": "string"
+	}
+  }
+}

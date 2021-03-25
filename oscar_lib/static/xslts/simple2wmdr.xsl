@@ -17,7 +17,7 @@
 					<wmdr:responsibleParty>
 						<wmdr:ResponsibleParty>
 							<wmdr:responsibleParty>
-								<gmd:CI_ResponsibleParty>
+								<gmd:CI_ResponsibleParty id="first_responsible_party">
 									<xsl:if test="station/organization/text()">
 										<gmd:organisationName>
 											<gco:CharacterString><xsl:value-of select="station/organization/text()"/></gco:CharacterString>

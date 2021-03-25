@@ -5,4 +5,5 @@ from .oscar_client import OscarClient
 from .utils import extractSchedules
 from .station import Station
 from .oscar_gui_client import OscarGUIClient
-
+from .oscar_interface import FormalOscarInterface
+from .oscar_interface_dummy import OscarInterfaceDummy

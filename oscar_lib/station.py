@@ -1,17 +1,20 @@
 import os
+import sys
 import logging
+import uuid 
+import jsonschema
+import json
+import isodate
+
 from lxml import etree
 from io import BytesIO
 from jsonschema import validate
 from copy import deepcopy
-import jsonschema
-import json
+from dict2xml import dict2xml
 import xmltodict
-from dicttoxml import dicttoxml
 
-logging.getLogger(__name__).addHandler(logging.NullHandler())
-logger = logging.getLogger()
-logging.getLogger("dicttoxml").setLevel(logging.WARNING)
+#logging.getLogger(__name__).addHandler(logging.NullHandler())
+logger = logging.getLogger(__name__)
 
 
 mydir = os.path.dirname(__file__) + "/static/"
@@ -20,7 +23,8 @@ namespaces = {
     'wmdr':'http://def.wmo.int/wmdr/2017',
     'gml' : 'http://www.opengis.net/gml/3.2',        
     'xlink' : 'http://www.w3.org/1999/xlink',
-    'xsi' : 'http://www.w3.org/2001/XMLSchema-instance'
+    'xsi' : 'http://www.w3.org/2001/XMLSchema-instance',
+    'om' : 'http://www.opengis.net/om/2.0'
 }
 
 internalDefaultSchedule = { 
@@ -29,7 +33,7 @@ internalDefaultSchedule = {
     "startWeekday": 1, "endWeekday": 7,
     "startHour": 0, "startMinute": 0,          
     "endHour": 23,    "endMinute": 59,
-    "interval": "PT1H",     "international": True   
+    "interval": 3600,     "international": True   
 }
 
 def makeElemnt(prefix,name):
@@ -53,6 +57,29 @@ def makeXMLSchedule(schedule):
     </wmdr:Schedule>
     """.format(**schedule)
     
+    return etree.fromstring(tmpl)
+
+def makeAffiliation(affiliation,status,begin_date):
+
+    tmpl = """
+        <wmdr:programAffiliation xmlns:wmdr="http://def.wmo.int/wmdr/2017" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gml="http://www.opengis.net/gml/3.2">
+            <wmdr:ProgramAffiliation>
+                <wmdr:programAffiliation xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/ProgramAffiliation/{affiliation}"/>
+                <wmdr:reportingStatus>
+                    <wmdr:ReportingStatus>
+                        <wmdr:reportingStatus xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/ReportingStatus/{status}"/>
+                        <wmdr:validPeriod xlink:type="simple">
+                            <gml:TimePeriod gml:id="id_{gml_id}">
+                                <gml:beginPosition>{begin_date:%Y-%m-%d}</gml:beginPosition>
+                                <gml:endPosition/>
+                            </gml:TimePeriod>
+                        </wmdr:validPeriod>
+                    </wmdr:ReportingStatus>
+            </wmdr:reportingStatus>
+            </wmdr:ProgramAffiliation>
+        </wmdr:programAffiliation>
+    """.format(affiliation=affiliation,status=status,begin_date=begin_date,gml_id=str(uuid.uuid1().int))
+
     return etree.fromstring(tmpl)
 
 
@@ -125,7 +152,10 @@ with open(mydir+"/xslts/simple2wmdr.xsl", 'r') as xslt_file:
 
 class Station:
     
-    def _initializeFromXML(self,wmdr):
+    def _initializeFromXML(self,wmdr,remove_comments=False):
+    
+        logger.debug("initializing station from XML: {}".format(wmdr))
+        
     
         self.syntax_error=False
         self.invalid_schema=False
@@ -133,7 +163,8 @@ class Station:
         
         try:
             logger.debug("validating XML")
-            self.xml_root = etree.parse(BytesIO(wmdr))
+            parser = etree.XMLParser(remove_comments=remove_comments)
+            self.xml_root = etree.parse(BytesIO(wmdr),parser)
             logger.debug('XML well formed, syntax ok.')
             # hold internal copy of original XML. Needs to be valid so that we can submit it 
             self.original_xml = deepcopy(self.xml_root)
@@ -149,28 +180,48 @@ class Station:
             self.invalid_schema = True
             Station.__fix_deployments(self.original_xml,mode="update",defaultSchedule=internalDefaultSchedule)
             xmlschema.assertValid(self.original_xml)
-    
+            
     def _initializeFromDict(self,mydict):
+    
+        logger.debug("initializing station from Dict: {}".format(mydict))
+
 
         affiliations = [o["affiliation"] for o in mydict["observations"] ]
         mydict["affiliations"]=sorted(list(set(affiliations)),reverse = True)
 
         mydict = {"station": mydict}
-    
-        my_item_func = lambda x: 'observation' if x=="observations" else ('url' if x=='urls' else 'affiliation')
-        xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
+        
+        # remove dicttoxml code
+        #my_item_func = lambda x: 'observation' if x=="observations" else ('url' if x=='urls' else 'affiliation')
+        #xml = dicttoxml(mydict,attr_type=False,item_func=my_item_func,root=False).decode("utf-8")
+        #xml = xml.replace("True","true").replace("False","false")
+        
+        # adjust our dict format to the format required by xml2dict
+        mydict["station"]["affiliations"] =  {"affiliation": mydict["station"]["affiliations"]  }
+
+        if "urls" in mydict["station"]:
+            mydict["station"]["urls"] =  {"url": mydict["station"]["urls"]  }         
+        
+        mydict["station"]["observations"] =  {"observation": mydict["station"]["observations"]  }         
+        
+        xml = dict2xml(mydict, wrap=None, indent="  ")
         xml = xml.replace("True","true").replace("False","false")
+        
         self._initializeFromSimpleXML(xml)
         
         
+        
     def _initializeFromSimpleXML(self,xml):
+        
+        logger.debug("initializing station from XML: {}".format(xml))
+    
         xml_root = etree.fromstring(xml)
         
         try:
             xmlschema_simple.assertValid(xml_root)
         except etree.DocumentInvalid as di:
             logger.warning("XML invalid:",di,xml)
-            sys.exit(1)
+            #sys.exit(1)
 
         wmdr_tree  = transform_simple(xml_root) # 
         self._initializeFromXML( str(wmdr_tree).encode("utf-8") )
@@ -181,10 +232,10 @@ class Station:
     
     def __init__(self,*args, **kwargs):
         """initializes a Station object. The object can be initialized by passing a WMRD record as string, a string encoded JSON representation, a simplified XML representation or using keyword parameters."""
-        logging.debug("init")
+        logger.debug("initializing station {}".format(kwargs))
         self.simplexml=None
         
-        if len(args) == 1 and len(kwargs) == 0:
+        if len(args) == 1 and (len(kwargs) == 0 or (len(kwargs)==1 and 'remove_comments' in kwargs)) :
             info = args[0]
             try:
                 if not type(info) is dict:                    
@@ -193,7 +244,8 @@ class Station:
             except json.decoder.JSONDecodeError: 
                 try:
                     logger.debug("input not JSON.. try XML in WMDR")
-                    self._initializeFromXML(info)
+                    remove_comments = kwargs.get('remove_comments',False)
+                    self._initializeFromXML(info,remove_comments=remove_comments)
                 except etree.DocumentInvalid:
                     logger.debug("input not WMDR, trying simple XML")
                     try:
@@ -216,7 +268,7 @@ class Station:
                 for o in kwargs["observations"]:
                     if default_schedule and not "schedule" in o.keys():
                         o["schedule"] = default_schedule.copy()
-                                            
+                    
                     validate( instance=o["schedule"] , schema=schedule_schema_small ,  format_checker=jsonschema.FormatChecker() )
                 
                 self._initializeFromDict(mydict)
@@ -297,7 +349,7 @@ class Station:
             uom_elem.addnext( reporting_elem )
         else:
             reporting_elem=reporting_elem[0]
-        reporting_elem.text = defaultSchedule["interval"]
+        reporting_elem.text =  "PT{}S".format(defaultSchedule["interval"]) 
         
         exchange_elem = elem.xpath("wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange",namespaces=namespaces)
         if not exchange_elem:
@@ -337,6 +389,7 @@ class Station:
             return False
 
         
+    
     def __fix_deployments(xml_root,mode="update",defaultSchedule=None):
 
         if not mode in ["delete","update"]:
@@ -416,14 +469,65 @@ class Station:
             # with open("test_out.xml","wb") as f:
                 # f.write( etree.tostring(xml_root,  pretty_print=True, xml_declaration=True))
             
+    def update_affiliations(self,affiliation: str = None ,  variables: list = [], operational_status = 'operational', program_id = None , begin_date = None ):        
+    
+        logger.debug("update_affiliations: affiliation: {}, vars: {}, status: {}, id: {}, date:{} ".format(affiliation,variables,operational_status,program_id,begin_date))
+    
+        if not affiliation in self.affiliations(): # need to add new affiliation element
+            affiliation_element = self.xml_root.xpath('/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:programAffiliation',namespaces=namespaces)[0]
             
+            if len(affiliation_element)==0:
+                raise Exception("could not find existing affiliation to append to.. XML should already have at least one affiliation")
+
+            affiliation_element.addnext( makeAffiliation(affiliation,operational_status,begin_date) )
+    
+        # now add the affiliations under the observations
+        updated_variables = { var:True for var in variables }
+        for var in variables:
+            #xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[@xlink:href='http://codes.wmo.int/wmdr/ObservedVariableAtmosphere/{}']]/wmdr:programAffiliation".format(var)
+            xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[contains(@xlink:href,'http://codes.wmo.int/wmdr/') and contains(@xlink:href,'/{}')]]/wmdr:programAffiliation".format(var)
+            
+            observation_affiliations = self.xml_root.xpath(xpath,namespaces=namespaces)
+            
+            if len(observation_affiliations)==0:
+                logging.info("no observation for variable {}, skipping".format(var))
+                updated_variables[var]=False
+                continue
+                        
+            existing_affiliations = [elem.get("{http://www.w3.org/1999/xlink}href").split('/')[-1] for elem in observation_affiliations]
+            
+            if not affiliation in existing_affiliations:
+                # need to get the wmdr:/programAffiliation element. The xpath before selected the 
+                observation_affiliations[-1].addnext( etree.fromstring("""
+                    <wmdr:programAffiliation  
+                        xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:wmdr="http://def.wmo.int/wmdr/2017"
+                        xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/{}"/>""".format(affiliation)
+                ))
+                
+        logger.debug("update_affiliations returns: {}".format(updated_variables))
+        return updated_variables
+        
+    
+    
+    def affiliations(self):
+        """extract the affiliations of the station"""
+        
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:programAffiliation/wmdr:ProgramAffiliation/wmdr:programAffiliation/@xlink:href'
+
+        affiliation_elements = self.xml_root.xpath(xpath , namespaces=namespaces)
+        ret = [str(elem).split('/')[-1] for elem in affiliation_elements]
+
+        return ret
+
+
     def schedules(self): 
         """extracts the schedules of the station and returns them grouped by variable"""
-        result_tree  = transform_schedules(self.xml_root)
+        result_tree = transform_schedules(self.xml_root)
         
         def convert_types(path,key,value):
             int_fields = ['startMonth','endMonth','startWeekday','endWeekday','startHour','endHour','startMinute','endMinute']
             bool_fields = ['international',]
+            interval_fields = ['interval',]
             
             try:
                 if key in int_fields:
@@ -432,18 +536,39 @@ class Station:
                 if key in bool_fields:
                     return key , value in ['True','true']
                     
+                if key in interval_fields:
+                    return key, int(isodate.parse_duration(value).total_seconds())
+                    
                 return key, value
             except (ValueError, TypeError):
                 return key, value
-        
+                
         station = xmltodict.parse(result_tree,postprocessor=convert_types, force_list=('observations','deployments','datagenerations'))
         
         res = {}
         for o in station['station']['observations']:  
             var_id = int(o['variableid'].split('/')[-1])
             res[var_id] = o
-
+            
         return res
+        
+    def variables(self):
+        """returns the variables of the station"""
+
+        xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability/wmdr:observation/om:OM_Observation/om:observedProperty/@xlink:href"
+
+        variables_elements = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not variables_elements:
+            raise ValueError("no variable element")
+            
+        result = []
+        
+        for elem in variables_elements:
+            result.append(int(elem.split('/')[-1]))
+            
+        return list(set(result)) 
+
         
         
     def current_schedules(self,variables=None):
@@ -477,17 +602,28 @@ class Station:
                 
         return observation
         
+    def get_name(self):
+        """return the name of the station"""
+        
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:name'
+        name_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not name_elem:
+            raise ValueError("no name element")
+            
+        return str(name_elem[0].text)
+    
+    
     def get_wigos_ids(self,primary=True):
-        """returns the WIGOS ID of a station
-        Currently only returns one WIGOS ID, as WMDR does not support multiple WIGOS IDs
-        """
+        """returns the WIGOS IDs of a station"""
+        
         xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier'
         wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
         
         if not wigosid_elem:
             raise ValueError("no WIGOS ID element")
             
-        return [ str(wigosid_elem[0].text) , ]
+        return (wigosid_elem[0].text).split(",") 
 
 
     def add_existing_contact(self,email):
@@ -502,6 +638,31 @@ class Station:
         self.xml_root = transform_insertcontact(self.xml_root, email= etree.XSLT.strparam(email) )
         
 
+    def update_wigosids(self,wigos_ids=[]):
+        """updates the stations adding the wigos ids passed as parameters. The first wigos id passed will be set a primary. Existing wigos identifiers will be kept, since the OSCAR data model does not allow to remove wigos ids.
+        
+        Parameters:
+        wigos_id (list): the list of WIGOS identifiers to add
+        
+        Returns:
+        list: ordered list of new wigos identifiers
+        """
+        
+        if len(wigos_ids) == 0 or not isinstance(wigos_ids,list):
+            return False
+
+        new_wigos_ids = list(dict.fromkeys( wigos_ids + self.get_wigos_ids() )) # remove duplicates but keep order
+        
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier'
+        wigosid_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not wigosid_elem:
+            raise ValueError("no WIGOS ID element")
+        
+        wigosid_elem[0].text = ",".join(new_wigos_ids)
+        
+        return new_wigos_ids
+    
     
     def update_schedule(self,gid,schedule,override=False):
         """updates the schedule indicated by `gid` with the `schedule` element"""
@@ -526,16 +687,19 @@ class Station:
         to_elem = dg_elem.xpath("./wmdr:validPeriod/gml:TimePeriod/gml:endPosition",namespaces=namespaces)
         interval_elem = dg_elem.xpath("./wmdr:reporting/wmdr:Reporting/wmdr:temporalReportingInterval",namespaces=namespaces) 
         international_elem = dg_elem.xpath("./wmdr:reporting/wmdr:Reporting/wmdr:internationalExchange",namespaces=namespaces) 
+        schedule_elem = dg_elem.xpath("./wmdr:schedule/wmdr:Schedule",namespaces=namespaces)
         
         # convert values to String for setting in XML.. except when None
         #schedule = { key: str(val) if val else None for (key,val) in schedule.items() }
         
+        elements_present =  len(from_elem)>0 and len(to_elem)>0 and len(interval_elem)>0 and len(international_elem)>0 and len(schedule_elem)>0
+        
         if from_elem:
             from_elem[0].text = schedule["from"]
         if to_elem:
-            to_elem[0].text = schedule["to"]
+            to_elem[0].text = schedule["to"] #if schedule["to"] else ""
         if interval_elem:
-            interval_elem[0].text = str(schedule["interval"])
+            interval_elem[0].text =  "PT{}S".format(str(schedule["interval"]))
         if international_elem:
             international_elem[0].text = str(schedule["international"]).lower()
             
@@ -547,9 +711,11 @@ class Station:
             if elem:
                 logger.debug("setting element '{}' to '{}'".format(key,val))
                 elem[0].text = str(val)
+                
+        return elements_present
     
     def __str__(self):
-        return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding="unicode")
+        return etree.tostring(self.xml_root,  pretty_print=True, xml_declaration=False, encoding="unicode"  )
         
     def simple_xml(self):
         """returns the simplified XML represtnations of the station
@@ -563,10 +729,10 @@ class Station:
     def validate(self,original=False):
         """Validates the station against the WMDR schema"""
         
-        xmlschema.assertValid(self.xml_root)
+        xmlschema.assert_(self.xml_root)
         if original:
             try:
                 xmlschema.assertValid(self.original_xml)
             except etree.DocumentInvalid as err:
-                raise Exception("original XML not valid")
+                raise Exception("original XML not valid ({})".format(str(err)))
         
