@@ -309,8 +309,8 @@ class Station:
         # with open("tmp/out2.xml","w",encoding="utf8") as f:
                 # f.write(new_xml)
             
-        status = client.uploadXML(new_xml)
-        if not status in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
+        status = client.upload_XML(new_xml)
+        if not status in ['SUCCESS_WITH_WARNINGS','SUCCESS','VALID_XML_WITH_ERRORS_OR_WARNINGS']:
             raise Exception("error saving updated XML ({})".format(status))
 
         logger.debug("uploaded updated XML. Status: {}".format(status))
