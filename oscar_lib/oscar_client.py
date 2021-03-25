@@ -51,7 +51,7 @@ class OscarClient(object):
         """
     
         logger.debug("upload_XML" + str(xml))
-        status,message=self.upload_XML_detailed(self,xml)
+        status,message=self.upload_XML_detailed(xml)
         return status
     
     def upload_XML_detailed(self,xml):
