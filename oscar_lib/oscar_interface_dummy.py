@@ -28,11 +28,12 @@ class OscarInterfaceDummy(FormalOscarInterface):
         token (str): the user API token
         cache (bool): whether to cache load_station calls in the client (default False)
         """
-        #if server != "DEPL":
+        #if server == "DEPL":
+        #    oscar_url = 
         #    raise Exception("only DEPL implemented at this stage")
             
         self.cache=cache
-        self.client = OscarClient(oscar_url = OscarClient.OSCAR_DEPL, token=token)
+        self.client = OscarClient(oscar_url = (OscarClient.OSCAR_DEFAULT if server == "PROD" else OscarClient.OSCAR_DEPL) , token=token)
         logger.info("initalized OSCAR client for {}".format(server))   
    
     def _upload_station(self,new_station):
