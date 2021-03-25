@@ -522,7 +522,7 @@ class Station:
 
     def schedules(self): 
         """extracts the schedules of the station and returns them grouped by variable"""
-        result_tree  = transform_schedules(self.xml_root)
+        result_tree = transform_schedules(self.xml_root)
         
         def convert_types(path,key,value):
             int_fields = ['startMonth','endMonth','startWeekday','endWeekday','startHour','endHour','startMinute','endMinute']

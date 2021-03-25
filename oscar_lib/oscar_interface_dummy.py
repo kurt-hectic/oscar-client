@@ -28,8 +28,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
         token (str): the user API token
         cache (bool): whether to cache load_station calls in the client (default False)
         """
-        if server != "DEPL":
-            raise Exception("only DEPL implemented at this stage")
+        #if server != "DEPL":
+        #    raise Exception("only DEPL implemented at this stage")
             
         self.cache=cache
         self.client = OscarClient(oscar_url = OscarClient.OSCAR_DEPL, token=token)
@@ -96,7 +96,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         station["creation"] = isodate.parse_datetime(station["creation"]).strftime("%Y-%m-%d")
         
-        if "realTime" in schedule: 
+        if "realTime" in station: 
             schedule["real-time"] = station["realTime"]
 
         observation_ids = [int(o.strip()) for o in station["parametersObserved"].split(",")]
