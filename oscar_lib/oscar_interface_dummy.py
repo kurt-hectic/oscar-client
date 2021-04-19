@@ -33,6 +33,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         #    raise Exception("only DEPL implemented at this stage")
             
         self.cache=cache
+        self.server=server
         self.client = OscarClient(oscar_url = (OscarClient.OSCAR_DEFAULT if server == "PROD" else OscarClient.OSCAR_DEPL) , token=token)
         logger.info("initalized OSCAR client for {}".format(server))   
    
@@ -143,7 +144,7 @@ class OscarInterfaceDummy(FormalOscarInterface):
         
         ret = self._upload_station(new_station)
         
-        logger.info("created new station {}: status: {}".format(station_params["name"],ret["status"]))
+        logger.info("created new station {}: status: {} server: {} wid: {}".format(station_params["name"],ret["status"],self.server,wigos_id))
        
         return ret
                         
@@ -168,6 +169,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
             
             if ret["status"] == 200 :
                 ret = {"status": 200, "message" :  ret["message"] + " " +  "OK. new wigos ids {}".format(",".join(ret))}
+                logger.info("updated wigos id: status: {} server: {} wid: {} {}".format(ret["status"],self.server,wigos_id,ret["message"]))
+
             else:
                 ret
                 
@@ -329,6 +332,10 @@ class OscarInterfaceDummy(FormalOscarInterface):
                 ret = {"status": 299, "message" :  ret["message"] + ". " +  "Not all variables updated. The following variables were not found: {}".format(",".join( [ str(var) for var,status in updated_variables.items() if not status ] )  )}
             else:
                 pass
+                
+            if ret["status"] == 200:
+                logger.info("updated affiliation: status: {} server: {} wid: {} {}".format(ret["status"],self.server,wigos_id,ret["message"]))
+
         except KeyError as ke:
                 message = "error: station {} does not exist {}".format(wigos_id,str(ke))
                 ret = {"status": 400, "message" :  message }
@@ -396,6 +403,8 @@ class OscarInterfaceDummy(FormalOscarInterface):
             
             if ret["status"] == 200 :
                 ret = {"status": 200, "message" :  ret["message"] + " " +  "updated schedules {}".format(schedules)}
+                logger.info("updated schedule: status: {} server: {} wid: {} {}".format(ret["status"],self.server,wigos_id,ret["message"]))
+
 
         except KeyError as ke:
                 message = "error: station {} does not exist {}".format(wigos_id,str(ke))
