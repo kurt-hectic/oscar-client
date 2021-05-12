@@ -1,0 +1,20 @@
+<observations>
+	<observation>
+		<variable>224</variable>
+		<observationsource>automaticReading</observationsource>
+		<affiliation>GOS</affiliation>
+		<schedule>
+			<startMonth>1</startMonth>
+			<endMonth>12</endMonth>
+			<startWeekday>1</startWeekday>
+			<endWeekday>7</endWeekday>
+			<startHour>0</startHour>
+			<endHour>23</endHour>
+			<startMinute>0</startMinute>
+			<endMinute>59</endMinute>
+			<interval>3600</interval>
+			<international>true</international>
+			<real-time>true</real-time>
+		</schedule>
+	</observation>
+</observations>

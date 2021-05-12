@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+	<xsl:import href="add_observation.xsl"></xsl:import>
 	<xsl:output method="xml"/>
 	<xsl:template match="/">
 		<wmdr:WIGOSMetadataRecord xmlns:wmdr="http://def.wmo.int/wmdr/2017" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:om="http://www.opengis.net/om/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:sam="http://www.opengis.net/sampling/2.0" xmlns:sams="http://www.opengis.net/samplingSpatial/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" gml:id="id1" xsi:schemaLocation="http://def.wmo.int/wmdr/2017 http://schemas.wmo.int/wmdr/1.0RC9/wmdr.xsd">
@@ -129,134 +130,11 @@
 						</wmdr:programAffiliation>
 					</xsl:for-each>
 					<xsl:for-each select="station/observations/observation">
-						<wmdr:observation>
-							<wmdr:ObservingCapability gml:id="obsCap_{position()}">
-								<wmdr:facility xlink:href="_{../../wigosid/text()}"/>
-								<wmdr:programAffiliation xlink:href="http://codes.wmo.int/wmdr/ProgramAffiliation/{affiliation/text()}"/>
-								<wmdr:observation>
-									<om:OM_Observation gml:id="obs_{position()}">
-										<om:type xlink:href="http://codes.wmo.int/wmdr/featureOfInterest/point"/>										
-										<om:phenomenonTime>
-											<gml:TimePeriod gml:id="pt_tp_{position()}_1">
-												<gml:beginPosition>
-													<xsl:value-of select="../../established/text()"/>
-												</gml:beginPosition>
-												<gml:endPosition/>
-											</gml:TimePeriod>
-										</om:phenomenonTime>
-										<om:resultTime/>
-										<om:procedure>
-											<wmdr:Process gml:id="proc_{position()}_1">
-												<wmdr:deployment>
-													<wmdr:Deployment gml:id="depl_{position()}_1">
-														<wmdr:deployedEquipment xlink:type="simple">
-															<wmdr:Equipment>
-																<wmdr:observingMethod xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/unknown"/>
-															</wmdr:Equipment>
-														</wmdr:deployedEquipment>
-														<wmdr:dataGeneration>
-															<wmdr:DataGeneration gml:id="dg_{position()}_1">
-																<wmdr:validPeriod>
-																	<gml:TimePeriod gml:id="dg_tp_{position()}_1">
-																		<gml:beginPosition>
-																			<xsl:value-of select="../../established/text()"/>
-																		</gml:beginPosition>
-																		<gml:endPosition/>
-																	</gml:TimePeriod>
-																</wmdr:validPeriod>
-																<wmdr:schedule>
-																	<wmdr:Schedule>
-																		<wmdr:startMonth>
-																			<xsl:value-of select="schedule/startMonth/text()"/>
-																		</wmdr:startMonth>
-																		<wmdr:endMonth>
-																			<xsl:value-of select="schedule/endMonth/text()"/>
-																		</wmdr:endMonth>
-																		<wmdr:startWeekday>
-																			<xsl:value-of select="schedule/startWeekday/text()"/>
-																		</wmdr:startWeekday>
-																		<wmdr:endWeekday>
-																			<xsl:value-of select="schedule/endWeekday/text()"/>
-																		</wmdr:endWeekday>
-																		<wmdr:startHour>
-																			<xsl:value-of select="schedule/startHour/text()"/>
-																		</wmdr:startHour>
-																		<wmdr:endHour>
-																			<xsl:value-of select="schedule/endHour/text()"/>
-																		</wmdr:endHour>
-																		<wmdr:startMinute>
-																			<xsl:value-of select="schedule/startMinute/text()"/>
-																		</wmdr:startMinute>
-																		<wmdr:endMinute>
-																			<xsl:value-of select="schedule/endMinute/text()"/>
-																		</wmdr:endMinute>
-																		<wmdr:diurnalBaseTime>00:00:00Z</wmdr:diurnalBaseTime>
-																	</wmdr:Schedule>
-																</wmdr:schedule>
-																<wmdr:sampling>
-																	<wmdr:Sampling>
-																		<!--  6-03 sampling strategy  -->
-																		<wmdr:samplingStrategy xlink:href="http://codes.wmo.int/common/wmdr/SamplingStrategy/continuous"/>
-																	</wmdr:Sampling>
-																</wmdr:sampling>
-																<wmdr:reporting>
-																	<wmdr:Reporting>
-																		<wmdr:internationalExchange>
-																			<xsl:value-of select="schedule/international/text()"/>
-																		</wmdr:internationalExchange>
-																		<wmdr:uom xlink:type="simple"/>
-																		<wmdr:temporalReportingInterval>PT<xsl:value-of select="schedule/interval/text()"/>S</wmdr:temporalReportingInterval>
-																	</wmdr:Reporting>
-																</wmdr:reporting>
-															</wmdr:DataGeneration>
-														</wmdr:dataGeneration>
-														<wmdr:validPeriod>
-															<gml:TimePeriod gml:id="vp_{position()}_1">
-																<gml:beginPosition>
-																	<xsl:value-of select="../../established/text()"/>
-																</gml:beginPosition>
-																<gml:endPosition/>
-															</gml:TimePeriod>
-														</wmdr:validPeriod>
-														<wmdr:applicationArea/>
-														<wmdr:sourceOfObservation xlink:href="http://codes.wmo.int/wmdr/SourceOfObservation/{observationsource/text()}"/>
-													</wmdr:Deployment>
-												</wmdr:deployment>
-											</wmdr:Process>
-										</om:procedure>
-										<om:observedProperty xlink:href="{variable/text()}"/>
-										<om:featureOfInterest/>
-										<om:result xlink:type="simple">
-											<wmdr:ResultSet>
-												<wmdr:distributionInfo>
-													<gmd:MD_Distribution>
-														<gmd:transferOptions xlink:type="simple">
-															<gmd:MD_DigitalTransferOptions>
-																<gmd:onLine xlink:type="simple">
-																	<gmd:CI_OnlineResource>
-																		<gmd:linkage/>
-																		<gmd:description>
-																			<xsl:choose>
-																				<xsl:when test="schedule/real-time='true'">
-																					<gco:CharacterString>NRT</gco:CharacterString>
-																				</xsl:when>
-																				<xsl:otherwise>
-																					<gco:CharacterString>Archive</gco:CharacterString>
-																				</xsl:otherwise>
-																			</xsl:choose>
-																		</gmd:description>
-																	</gmd:CI_OnlineResource>
-																</gmd:onLine>
-															</gmd:MD_DigitalTransferOptions>
-														</gmd:transferOptions>
-													</gmd:MD_Distribution>
-												</wmdr:distributionInfo>
-											</wmdr:ResultSet>
-										</om:result>
-									</om:OM_Observation>
-								</wmdr:observation>
-							</wmdr:ObservingCapability>
-						</wmdr:observation>
+						<xsl:call-template name="add_observation"  >
+							<xsl:with-param name="wigos_id" select="../../wigosid/text()"></xsl:with-param>
+							<xsl:with-param name="established" select="../../established/text()"></xsl:with-param>
+							<xsl:with-param name="prefix" select="'create'"></xsl:with-param>
+						</xsl:call-template>
 					</xsl:for-each>
 				</wmdr:ObservingFacility>
 			</wmdr:facility>

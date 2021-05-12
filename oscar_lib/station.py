@@ -5,13 +5,16 @@ import uuid
 import jsonschema
 import json
 import isodate
+import random
+import string
+import xmltodict
 
 from lxml import etree
 from io import BytesIO
 from jsonschema import validate
 from copy import deepcopy
 from dict2xml import dict2xml
-import xmltodict
+from datetime import datetime
 
 #logging.getLogger(__name__).addHandler(logging.NullHandler())
 logger = logging.getLogger(__name__)
@@ -58,6 +61,8 @@ def makeXMLSchedule(schedule):
     """.format(**schedule)
     
     return etree.fromstring(tmpl)
+    
+
 
 def makeAffiliation(affiliation,status,begin_date):
 
@@ -82,6 +87,28 @@ def makeAffiliation(affiliation,status,begin_date):
 
     return etree.fromstring(tmpl)
 
+def makeGeospatialLocation(lat,lon,elevation,begin_date):
+
+    tmpl = """
+    <wmdr:geospatialLocation xmlns:wmdr="http://def.wmo.int/wmdr/2017" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gml="http://www.opengis.net/gml/3.2">
+        <wmdr:GeospatialLocation>
+            <wmdr:geoLocation xlink:type="simple">
+                <gml:Point>
+                    <gml:pos>{lat} {lon} {elevation}</gml:pos>
+                </gml:Point>
+            </wmdr:geoLocation>
+            <wmdr:geopositioningMethod xlink:type="simple" xlink:href="http://codes.wmo.int/wmdr/GeopositioningMethod/gps"/>
+            <wmdr:validPeriod xlink:type="simple">
+                <gml:TimePeriod gml:id="id_{gml_id}">
+                    <gml:beginPosition>{begin_date:%Y-%m-%d}</gml:beginPosition>
+                    <gml:endPosition/>
+                </gml:TimePeriod>
+            </wmdr:validPeriod>
+        </wmdr:GeospatialLocation>
+    </wmdr:geospatialLocation>
+    """.format(lat=lat,lon=lon,elevation=elevation,begin_date=begin_date,gml_id=str(uuid.uuid1().int))
+
+    return etree.fromstring(tmpl)
 
 with open(mydir+"/json-schemas/schedule_schema.json","r") as f:
     schedule_schema = json.load( f )
@@ -130,15 +157,22 @@ with open(mydir+"/xslts/wmdr2schedule.xsl", 'r') as xslt_file:
     xslt_root  = etree.parse(xslt_file)
     transform_schedules = etree.XSLT(xslt_root)
 
-    logger.debug("XSLT parsed sucessfully")
+    logger.debug("XSLT for expanding schedule parsed sucessfully")
 
 # open and read schema file
 with open(mydir+"/xslts/insert_contact.xsl", 'r') as xslt_file:
     xslt_root  = etree.parse(xslt_file)
     transform_insertcontact = etree.XSLT(xslt_root)
 
-    logger.debug("XSLT parsed sucessfully")
+    logger.debug("XSLT for inserting contacts parsed sucessfully")
 
+
+# open and read schema file
+with open(mydir+"/xslts/simpleobs2wmdr.xsl", 'r') as xslt_file:
+    xslt_root  = etree.parse(xslt_file)
+    transform_createobservations = etree.XSLT(xslt_root)
+
+    logger.debug("XSLT for inserting observations parsed sucessfully")
 
 # open and read schema file
 with open(mydir+"/xslts/simple2wmdr.xsl", 'r') as xslt_file:
@@ -205,7 +239,7 @@ class Station:
         mydict["station"]["observations"] =  {"observation": mydict["station"]["observations"]  }         
         
         xml = dict2xml(mydict, wrap=None, indent="  ")
-        xml = xml.replace("True","true").replace("False","false")
+        xml = xml.replace(">True<",">true<").replace(">False<",">false<")
         
         self._initializeFromSimpleXML(xml)
         
@@ -485,7 +519,7 @@ class Station:
         updated_variables = { var:True for var in variables }
         for var in variables:
             #xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[@xlink:href='http://codes.wmo.int/wmdr/ObservedVariableAtmosphere/{}']]/wmdr:programAffiliation".format(var)
-            xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[contains(@xlink:href,'http://codes.wmo.int/wmdr/') and contains(@xlink:href,'/{}')]]/wmdr:programAffiliation".format(var)
+            xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability[wmdr:observation/om:OM_Observation/om:observedProperty[(contains(@xlink:href,'http://codes.wmo.int/wmdr/') and contains(@xlink:href,'/var_id')) or  @xlink:href = '{var_id}']]/wmdr:programAffiliation".format(var_id=var)
             
             observation_affiliations = self.xml_root.xpath(xpath,namespaces=namespaces)
             
@@ -507,7 +541,60 @@ class Station:
         logger.debug("update_affiliations returns: {}".format(updated_variables))
         return updated_variables
         
+        
+    def set_instrument_coordinates(self, var_id, latitude, longitude, elevation):
     
+        xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability/wmdr:observation/om:OM_Observation[ om:observedProperty[  (contains(@xlink:href,'http://codes.wmo.int/wmdr/') and contains(@xlink:href,'/var_id')) or  @xlink:href = '{var_id}'   ] ]/om:procedure/wmdr:Process/wmdr:deployment/wmdr:Deployment/wmdr:deployedEquipment/wmdr:Equipment/wmdr:observingMethod".format(var_id=var_id)
+        
+        xpath_location = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability/wmdr:observation/om:OM_Observation[ om:observedProperty[ (contains(@xlink:href,'http://codes.wmo.int/wmdr/') and contains(@xlink:href,'/{var_id}') ) or  @xlink:href = '{var_id}' ] ] /om:procedure/wmdr:Process/wmdr:deployment/wmdr:Deployment/wmdr:deployedEquipment/wmdr:Equipment/wmdr:geospatialLocation".format(var_id=var_id)
+        
+        
+        observation_elements = self.xml_root.xpath(xpath,namespaces=namespaces)
+            
+        if len(observation_elements) == 0:
+            raise Exception("no observation of variable {}".format(var_id))
+            
+        if len(observation_elements) > 1:
+            raise Exception("more than one observation of variable {}".format(var_id))
+        
+        observation_location_elements = self.xml_root.xpath(xpath_location,namespaces=namespaces)
+        
+        if len(observation_location_elements) == 0: # need to insert new element
+            established = self.get_established_date()
+            xml=makeGeospatialLocation(latitude,longitude,elevation,established)
+            
+            observation_elements[0].addprevious(xml)
+        
+        elif len(observation_location_elements) == 1: # update element
+            pass
+        else:
+            raise Exception("more than one geospatial location for var_id: {}".format(var_id))
+    
+        
+        
+    def add_observations(self,observations, wigos_id, date_from):
+
+        # wrapper for dict2xml
+        observations = { "observation" : observations }
+    
+        observations_xml = dict2xml(observations, wrap="observations", indent="  ")
+        observations_xml = observations_xml.replace(">True<",">true<").replace(">False<",">false<")
+ 
+        #print(observations_xml)
+    
+        prefix =  "add_" + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)) 
+    
+        observation_xml_wmdr = transform_createobservations( etree.fromstring(observations_xml) , wigos_id = "'{}'".format(wigos_id), date_from = "'{}'".format(date_from), prefix = "'{}'".format(prefix) ) # need to quote string params in ''
+        
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation[last()]'
+        observation_elements = self.xml_root.xpath(xpath , namespaces=namespaces)
+        
+        if observation_elements and len(observation_elements)>0:
+            observation_elements[0].addnext( observation_xml_wmdr.getroot() )
+        else:
+            raise Exception("no observation element")
+        
+        
     
     def affiliations(self):
         """extract the affiliations of the station"""
@@ -612,9 +699,25 @@ class Station:
             raise ValueError("no name element")
             
         return str(name_elem[0].text)
+        
+    def get_location(self,active_only=False):
     
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:geospatialLocation/wmdr:GeospatialLocation/wmdr:geoLocation/gml:Point/gml:pos'
     
-    def get_wigos_ids(self,primary=True):
+        location_elems = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not location_elems or len(location_elems)==0:
+            raise ValueError("no location element")
+            
+        ret = []
+        
+        for location_elem in location_elems:
+            temp = str(location_elem.text).split(" ")
+            ret.append( {"latitude":temp[0], "longitude":temp[1] , "elevation":temp[2] } )
+            
+        return ret[0] if active_only else ret
+      
+    def get_wigos_ids(self,primary=False):
         """returns the WIGOS IDs of a station"""
         
         xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/gml:identifier'
@@ -623,7 +726,24 @@ class Station:
         if not wigosid_elem:
             raise ValueError("no WIGOS ID element")
             
-        return (wigosid_elem[0].text).split(",") 
+            
+        wids = (wigosid_elem[0].text).split(",")
+        
+        return wids[0] if primary else wids
+            
+    def get_established_date(self):
+        """returns the date the station was established"""
+        
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:dateEstablished'
+        established_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not established_elem:
+            raise ValueError("no date established element")
+        
+        established = str(established_elem[0].text)
+        established = established if not established[-1] == "Z" else established[:-1]
+        
+        return datetime.strptime(established,"%Y-%m-%d")
 
 
     def add_existing_contact(self,email):
