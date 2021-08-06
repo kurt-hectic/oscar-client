@@ -544,7 +544,7 @@ class Station:
         
     def set_instrument_coordinates(self, var_id, latitude, longitude, elevation):
     
-        xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability/wmdr:observation/om:OM_Observation[ om:observedProperty[  (contains(@xlink:href,'http://codes.wmo.int/wmdr/') and contains(@xlink:href,'/var_id')) or  @xlink:href = '{var_id}'   ] ]/om:procedure/wmdr:Process/wmdr:deployment/wmdr:Deployment/wmdr:deployedEquipment/wmdr:Equipment/wmdr:observingMethod".format(var_id=var_id)
+        xpath = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability/wmdr:observation/om:OM_Observation[ om:observedProperty[  (contains(@xlink:href,'http://codes.wmo.int/wmdr/') and contains(@xlink:href,'/{var_id}')) or  @xlink:href = '{var_id}'   ] ]/om:procedure/wmdr:Process/wmdr:deployment/wmdr:Deployment/wmdr:deployedEquipment/wmdr:Equipment/wmdr:observingMethod".format(var_id=var_id)
         
         xpath_location = "/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:observation/wmdr:ObservingCapability/wmdr:observation/om:OM_Observation[ om:observedProperty[ (contains(@xlink:href,'http://codes.wmo.int/wmdr/') and contains(@xlink:href,'/{var_id}') ) or  @xlink:href = '{var_id}' ] ] /om:procedure/wmdr:Process/wmdr:deployment/wmdr:Deployment/wmdr:deployedEquipment/wmdr:Equipment/wmdr:geospatialLocation".format(var_id=var_id)
         
