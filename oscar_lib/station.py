@@ -319,7 +319,7 @@ class Station:
         
 
     
-    def save(self,client,override_doublesave=False):
+    def save(self,client,override_doublesave=True):
         """submits the station to OSCAR using the client object passed in via `client`
         This method allows to get around a bug in OSCAR todo with incorrect gml:id, as this method first saves the originally downloaded XML back to OSCAR,
         therefore setting the gml:id and then re-submits the modified XML.
@@ -332,7 +332,7 @@ class Station:
             # with open("tmp/out1.xml","w",encoding="utf8") as f:
                 # f.write(original_xml)
             
-            status = client.uploadXML( original_xml )
+            status = client.upload_XML( original_xml )
             logger.debug("uploaded original XML to set gml:id. Status: {}".format(status))
         
             if not status in ['SUCCESS_WITH_WARNINGS','SUCCESS']:
