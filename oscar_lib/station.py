@@ -593,7 +593,7 @@ class Station:
             #observation_elements[0].addnext( observation_xml_wmdr.getroot() )
             
             for c in observation_xml_wmdr.getroot().getchildren():
-                print("child",c)
+                #print("child",c)
                 observation_elements[0].addnext( c )
             
             
