@@ -576,7 +576,7 @@ class Station:
 
         # wrapper for dict2xml
         observations = { "observation" : observations }
-    
+
         observations_xml = dict2xml(observations, wrap="observations", indent="  ")
         observations_xml = observations_xml.replace(">True<",">true<").replace(">False<",">false<")
  
@@ -590,7 +590,13 @@ class Station:
         observation_elements = self.xml_root.xpath(xpath , namespaces=namespaces)
         
         if observation_elements and len(observation_elements)>0:
-            observation_elements[0].addnext( observation_xml_wmdr.getroot() )
+            #observation_elements[0].addnext( observation_xml_wmdr.getroot() )
+            
+            for c in observation_xml_wmdr.getroot().getchildren():
+                print("child",c)
+                observation_elements[0].addnext( c )
+            
+            
         else:
             raise Exception("no observation element")
         

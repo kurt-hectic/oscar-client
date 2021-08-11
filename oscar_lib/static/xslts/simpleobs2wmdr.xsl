@@ -6,6 +6,7 @@
 	<xsl:param name="date_from"/>
 	<xsl:output method="xml"/>
 	<xsl:template match="/observations">
+	<root>
 		<xsl:for-each select="./observation">
 			<xsl:call-template name="add_observation">
 				<xsl:with-param name="wigos_id" select="$wigos_id"/>
@@ -13,5 +14,6 @@
 				<xsl:with-param name="prefix" select="$prefix"/>
 			</xsl:call-template>
 		</xsl:for-each>
+	</root>
 	</xsl:template>
 </xsl:stylesheet>
