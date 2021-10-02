@@ -33,11 +33,11 @@ class OscarGUIClient(object):
             oscar_url = OscarClient.OSCAR_DEFAULT
            
         self.oscar_url = oscar_url
+        self.session = requests.Session()
             
         if username and password:
             auth_client = OscarSaml(oscar_url=oscar_url,username=username,password=password)
             
-            self.session = requests.Session()
             
             self.token = auth_client.qlack_token
             self.cookies = auth_client.cookies
