@@ -191,7 +191,7 @@ class OscarGUIClient(object):
             if kwargs["level"] == 'deployments':
                 level = 2
             
-        station_details_url = self.oscar_url + OscarClient._STATION_DETAILS_URL
+        station_details_url = self.oscar_url + OscarGUIClient._STATION_DETAILS_URL
         log.debug("getting station details for {} from {}".format(internal_id,station_details_url))
         rsp=self.session.get( station_details_url.format(internal_id=internal_id) )
         
@@ -203,7 +203,7 @@ class OscarGUIClient(object):
 
         if level > 0:
             log.info("getting station observation groups for {}".format(internal_id))
-            station_observations_url = (self.oscar_url + OscarClient._STATION_OBSERVATIONS_URL).format(internal_id=internal_id)
+            station_observations_url = (self.oscar_url + OscarGUIClient._STATION_OBSERVATIONS_URL).format(internal_id=internal_id)
             rsp=self.session.get( station_observations_url )
             observations = json.loads(rsp.content)
 
@@ -215,7 +215,7 @@ class OscarGUIClient(object):
                     observation_id = int(observation['id'])
                     
                     log.info("getting deployment {}".format(observation_id))
-                    deployment_url = (self.oscar_url + OscarClient._DEPLOYMENT_URL).format(observation_id=observation_id)
+                    deployment_url = (self.oscar_url + OscarGUIClient._DEPLOYMENT_URL).format(observation_id=observation_id)
                     rsp = self.session.get( deployment_url )
                     
                     deployments = []
