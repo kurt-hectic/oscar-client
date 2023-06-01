@@ -24,7 +24,7 @@ def get_region(station):
         try:
             notation = detailed_station.get_region()
             region = region_map[notation.split("/")[5].lower()]
-        except Exeption as e:
+        except Exception as e:
             region = ""
         
         return region
