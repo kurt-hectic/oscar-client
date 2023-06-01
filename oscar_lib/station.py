@@ -695,6 +695,18 @@ class Station:
                 
         return observation
         
+    def get_region(self):
+        """ returns the region of the station"""
+    
+        xpath = '/wmdr:WIGOSMetadataRecord/wmdr:facility/wmdr:ObservingFacility/wmdr:wmoRegion/@xlink:href'
+        
+        region_elem = self.xml_root.xpath(xpath,namespaces=namespaces)
+        
+        if not region_elem:
+            raise ValueError("no region element")
+            
+        return str(region_elem[0])
+        
     def get_name(self):
         """return the name of the station"""
         

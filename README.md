@@ -8,6 +8,10 @@ This library is a community effort and supported by the WMO community, through t
 
 Some part of the code, grouped in the object OscarGUIClient, is experimental and uses an internal API of OSCAR/Surface. These methods should be used with care and awareness that the internal API endpoint in OSCAR/Surface may change.
 
+## installation
+
+```pip install git+https://github.com/kurt-hectic/oscar-client.git```
+
 ### create a station in OSCAR/Surface
 ```python
 from oscar_lib import Station, OscarClient
